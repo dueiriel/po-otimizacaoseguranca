@@ -1,0 +1,37 @@
+# =============================================================================
+# Dependências do Projeto: Otimização de Recursos de Segurança Pública
+# Trabalho Acadêmico - Pesquisa Operacional
+# =============================================================================
+
+# Framework para criação da interface web interativa
+streamlit>=1.28.0
+
+# Manipulação e análise de dados tabulares
+pandas>=2.0.0
+
+# Visualizações interativas e mapas
+plotly>=5.18.0
+
+# Biblioteca para Programação Linear (Simplex)
+pulp>=2.7.0
+
+# Suporte a arrays numéricos (dependência do pandas/plotly)
+numpy>=1.24.0
+
+# GeoJSON para mapas do Brasil
+geojson>=3.0.0
+
+# Requisições HTTP para baixar dados geográficos
+requests>=2.31.0
+
+# Visualizações estáticas (gráficos tornado, etc)
+matplotlib>=3.7.0
+
+# Análise estatística (regressões, testes)
+scipy>=1.10.0
+
+# Leitura de arquivos Excel (Anuário FBSP)
+openpyxl>=3.1.0
+
+# Template engine para pandas.style
+jinja2>=3.1.0
