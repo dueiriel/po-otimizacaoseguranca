@@ -455,9 +455,10 @@ def render_dashboard(df: pd.DataFrame, geojson, ano: int):
             coloraxis_colorbar=dict(
                 title="Taxa/100k",
                 tickformat=".0f"
-            )
+            ),
+            dragmode=False
         )
-        st.plotly_chart(fig_mapa, use_container_width=True)
+        st.plotly_chart(fig_mapa, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
     
     with col_grafico:
         st.subheader("📈 Ranking Completo - Taxa de Violência por Estado")
@@ -477,80 +478,161 @@ def render_dashboard(df: pd.DataFrame, geojson, ano: int):
         )
         fig_bar.update_traces(texttemplate='%{text:.1f}', textposition='outside')
         fig_bar.update_layout(
-            height=700,  # Mais alto para caber todos os estados
+            height=700,
             showlegend=False,
             coloraxis_showscale=False,
             xaxis_title="Taxa de Mortes por 100 mil hab.",
-            yaxis_title=""
+            yaxis_title="",
+            xaxis=dict(fixedrange=True),
+            yaxis=dict(fixedrange=True),
+            dragmode=False
         )
-        st.plotly_chart(fig_bar, use_container_width=True)
+        st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
     
-    # Segunda linha de gráficos
+    # =========================================================================
+    # GRÁFICOS DE GASTO PER CAPITA
+    # =========================================================================
     st.markdown("---")
-    col_scatter, col_regiao = st.columns(2)
+    col_mapa_gasto, col_grafico_gasto = st.columns([1, 1.2])
     
-    with col_scatter:
-        st.subheader("💰 Relação: Gasto Per Capita × Taxa de Violência")
+    with col_mapa_gasto:
+        st.subheader("🗺️ Mapa de Calor - Gasto Per Capita (R$)")
         
-        fig_scatter = px.scatter(
-            df,
+        df_mapa_gasto = df.copy()
+        
+        if geojson is not None:
+            fig_mapa_gasto = px.choropleth(
+                df_mapa_gasto,
+                geojson=geojson,
+                locations='sigla',
+                featureidkey="properties.sigla",
+                color='gasto_per_capita',
+                color_continuous_scale='Blues',
+                hover_name='estado',
+                hover_data={
+                    'sigla': False,
+                    'gasto_per_capita': ':,.0f',
+                    'taxa_mortes_100k': ':.1f',
+                    'populacao': ':,.0f'
+                },
+                labels={
+                    'gasto_per_capita': 'Gasto per capita (R$)',
+                    'taxa_mortes_100k': 'Taxa/100k',
+                    'populacao': 'População'
+                }
+            )
+            fig_mapa_gasto.update_geos(
+                fitbounds="locations",
+                visible=False
+            )
+        else:
+            coords = obter_coordenadas_estados()
+            df_mapa_gasto = pd.merge(df_mapa_gasto, coords, on='sigla')
+            
+            fig_mapa_gasto = px.scatter_geo(
+                df_mapa_gasto,
+                lat='latitude',
+                lon='longitude',
+                color='gasto_per_capita',
+                size='populacao',
+                hover_name='estado',
+                color_continuous_scale='Blues',
+                scope='south america',
+                size_max=40
+            )
+            fig_mapa_gasto.update_geos(
+                center=dict(lat=-15, lon=-55),
+                projection_scale=3
+            )
+        
+        fig_mapa_gasto.update_layout(
+            margin=dict(l=0, r=0, t=0, b=0),
+            height=450,
+            coloraxis_colorbar=dict(
+                title="R$/hab",
+                tickformat=",.0f"
+            ),
+            dragmode=False
+        )
+        st.plotly_chart(fig_mapa_gasto, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
+    
+    with col_grafico_gasto:
+        st.subheader("💰 Ranking Completo - Gasto Per Capita por Estado")
+        
+        df_ranking_gasto = df.sort_values('gasto_per_capita', ascending=True)
+        
+        fig_bar_gasto = px.bar(
+            df_ranking_gasto,
             x='gasto_per_capita',
-            y='taxa_mortes_100k',
-            size='populacao',
-            color='regiao',
-            hover_name='estado',
-            text='sigla',
-            labels={
-                'gasto_per_capita': 'Gasto Per Capita (R$)',
-                'taxa_mortes_100k': 'Taxa por 100 mil',
-                'regiao': 'Região',
-                'populacao': 'População'
-            }
+            y='sigla',
+            orientation='h',
+            color='gasto_per_capita',
+            color_continuous_scale='Blues',
+            text='gasto_per_capita',
+            labels={'gasto_per_capita': 'Gasto Per Capita (R$)', 'sigla': 'Estado'}
         )
-        fig_scatter.update_traces(textposition='top center', textfont_size=9)
-        fig_scatter.update_layout(height=400)
-        st.plotly_chart(fig_scatter, use_container_width=True)
+        fig_bar_gasto.update_traces(texttemplate='R$ %{text:,.0f}', textposition='outside')
+        fig_bar_gasto.update_layout(
+            height=700,
+            showlegend=False,
+            coloraxis_showscale=False,
+            xaxis_title="Gasto Per Capita (R$)",
+            yaxis_title="",
+            xaxis=dict(fixedrange=True),
+            yaxis=dict(fixedrange=True),
+            dragmode=False
+        )
+        st.plotly_chart(fig_bar_gasto, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
     
-    with col_regiao:
-        st.subheader("🗺️ Comparativo por Região")
-        
-        df_regiao = df.groupby('regiao').agg({
-            'mortes_violentas': 'sum',
-            'populacao': 'sum',
-            'orcamento_2022_milhoes': 'sum'
-        }).reset_index()
-        
-        df_regiao['taxa_regiao'] = df_regiao['mortes_violentas'] / df_regiao['populacao'] * 100000
-        df_regiao['gasto_pc_regiao'] = df_regiao['orcamento_2022_milhoes'] * 1e6 / df_regiao['populacao']
-        
-        fig_regiao = make_subplots(
-            rows=1, cols=2,
-            subplot_titles=("Taxa por 100 mil", "Gasto Per Capita"),
-            specs=[[{"type": "bar"}, {"type": "bar"}]]
-        )
-        
-        fig_regiao.add_trace(
-            go.Bar(
-                x=df_regiao['regiao'],
-                y=df_regiao['taxa_regiao'],
-                marker_color=['#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#1f77b4'],
-                name='Taxa'
-            ),
-            row=1, col=1
-        )
-        
-        fig_regiao.add_trace(
-            go.Bar(
-                x=df_regiao['regiao'],
-                y=df_regiao['gasto_pc_regiao'],
-                marker_color=['#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#1f77b4'],
-                name='Gasto PC'
-            ),
-            row=1, col=2
-        )
-        
-        fig_regiao.update_layout(height=400, showlegend=False)
-        st.plotly_chart(fig_regiao, use_container_width=True)
+    # Gráfico de comparativo por região
+    st.markdown("---")
+    st.subheader("🗺️ Comparativo por Região")
+    
+    df_regiao = df.groupby('regiao').agg({
+        'mortes_violentas': 'sum',
+        'populacao': 'sum',
+        'orcamento_2022_milhoes': 'sum'
+    }).reset_index()
+    
+    df_regiao['taxa_regiao'] = df_regiao['mortes_violentas'] / df_regiao['populacao'] * 100000
+    df_regiao['gasto_pc_regiao'] = df_regiao['orcamento_2022_milhoes'] * 1e6 / df_regiao['populacao']
+    
+    fig_regiao = make_subplots(
+        rows=1, cols=2,
+        subplot_titles=("Taxa por 100 mil", "Gasto Per Capita"),
+        specs=[[{"type": "bar"}, {"type": "bar"}]]
+    )
+    
+    fig_regiao.add_trace(
+        go.Bar(
+            x=df_regiao['regiao'],
+            y=df_regiao['taxa_regiao'],
+            marker_color=['#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#1f77b4'],
+            name='Taxa'
+        ),
+        row=1, col=1
+    )
+    
+    fig_regiao.add_trace(
+        go.Bar(
+            x=df_regiao['regiao'],
+            y=df_regiao['gasto_pc_regiao'],
+            marker_color=['#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#1f77b4'],
+            name='Gasto PC'
+        ),
+        row=1, col=2
+    )
+    
+    fig_regiao.update_layout(
+        height=400, 
+        showlegend=False,
+        xaxis=dict(fixedrange=True),
+        yaxis=dict(fixedrange=True),
+        xaxis2=dict(fixedrange=True),
+        yaxis2=dict(fixedrange=True),
+        dragmode=False
+    )
+    st.plotly_chart(fig_regiao, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
     
     # Tabela de dados
     st.markdown("---")
