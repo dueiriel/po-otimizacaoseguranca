@@ -112,10 +112,12 @@ def fig3_eficiencia(df):
     print("Gerando Figura 3: Eficiência...")
     
     # Calcula índice de eficiência
+    # Fórmula: (taxa_média / taxa_estado) / (gasto_estado / gasto_médio)
+    # Quanto MENOR a taxa e MENOR o gasto, MAIOR o índice (mais eficiente)
     df_efic = df.copy()
     df_efic['indice_eficiencia'] = (
-        (df_efic['gasto_per_capita'] / df_efic['gasto_per_capita'].mean()) / 
-        (df_efic['taxa_mortes_100k'] / df_efic['taxa_mortes_100k'].mean())
+        (df_efic['taxa_mortes_100k'].mean() / df_efic['taxa_mortes_100k']) / 
+        (df_efic['gasto_per_capita'] / df_efic['gasto_per_capita'].mean())
     )
     df_efic = df_efic.sort_values('indice_eficiencia', ascending=True)
     

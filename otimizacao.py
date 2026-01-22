@@ -64,7 +64,8 @@ def otimizar_alocacao(
     df_dados: pd.DataFrame,
     orcamento_disponivel: float,
     investimento_minimo_pct: float = 0.0,
-    investimento_maximo_pct: float = 50.0,
+    investimento_maximo_pct: float = 25.0,
+    max_concentracao_pct: float = 15.0,
     verbose: bool = False
 ) -> ResultadoOtimizacao:
     """
@@ -79,6 +80,7 @@ def otimizar_alocacao(
         orcamento_disponivel: Orçamento total disponível para distribuição (R$ milhões)
         investimento_minimo_pct: % mínimo do orçamento atual como piso de investimento
         investimento_maximo_pct: % máximo do orçamento atual como teto de investimento
+        max_concentracao_pct: % máximo do orçamento disponível que um único estado pode receber
         verbose: Se True, exibe detalhes do solver
     
     Returns:
@@ -100,12 +102,20 @@ def otimizar_alocacao(
     mortes = dict(zip(df['sigla'], df['mortes_violentas']))
     orcamento_atual = dict(zip(df['sigla'], df['orcamento_2022_milhoes']))
     elasticidade = dict(zip(df['sigla'], df['elasticidade']))
+    regiao = dict(zip(df['sigla'], df['regiao']))
     
     # Calcula limites de investimento por estado
     # Mínimo: garantir algum investimento proporcional
-    # Máximo: evitar concentração excessiva em poucos estados
+    # Máximo: menor entre (% do orçamento atual) e (% do orçamento disponível)
+    # Isso evita concentração excessiva em poucos estados
     inv_min = {e: orcamento_atual[e] * investimento_minimo_pct / 100 for e in estados}
-    inv_max = {e: orcamento_atual[e] * investimento_maximo_pct / 100 for e in estados}
+    inv_max = {
+        e: min(
+            orcamento_atual[e] * investimento_maximo_pct / 100,
+            orcamento_disponivel * max_concentracao_pct / 100
+        ) 
+        for e in estados
+    }
     
     # ==========================================================================
     # CRIAÇÃO DO MODELO DE PROGRAMAÇÃO LINEAR
@@ -172,6 +182,16 @@ def otimizar_alocacao(
         lpSum([x[e] for e in estados]) <= orcamento_disponivel,
         "Restricao_Orcamento_Total"
     )
+    
+    # Restrição 2: Limite máximo por região (40% do orçamento por região)
+    # Isso evita concentração excessiva em uma única região geográfica
+    regioes_unicas = set(regiao.values())
+    for reg in regioes_unicas:
+        estados_regiao = [e for e in estados if regiao[e] == reg]
+        modelo += (
+            lpSum([x[e] for e in estados_regiao]) <= orcamento_disponivel * 0.40,
+            f"Restricao_Max_Regiao_{reg.replace('-', '_').replace(' ', '_')}"
+        )
     
     # Nota: As restrições de limite mínimo e máximo por estado já estão
     # incorporadas nos limites das variáveis (lowBound e upBound).

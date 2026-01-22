@@ -70,12 +70,63 @@ st.markdown("""
         padding: 1rem;
         margin: 0.5rem 0;
     }
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 2rem;
+    
+    /* Estiliza o radio horizontal para parecer com abas */
+    div[data-testid="stHorizontalBlock"]:has(div[data-testid="stRadio"]) {
+        background-color: transparent;
+        border-bottom: 1px solid #e0e0e0;
+        padding-bottom: 0;
+        margin-bottom: 1rem;
     }
-    .stTabs [data-baseweb="tab"] {
-        font-size: 1.1rem;
+    
+    /* Container do radio */
+    div[data-testid="stRadio"] > div {
+        flex-direction: row !important;
+        gap: 0 !important;
+        background: transparent;
+    }
+    
+    /* Cada opção do radio (aba) */
+    div[data-testid="stRadio"] label {
+        background-color: transparent;
+        border: none;
+        border-bottom: 3px solid transparent;
+        border-radius: 0;
+        padding: 0.75rem 1.5rem;
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 500;
+        color: #555;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    /* Hover nas abas */
+    div[data-testid="stRadio"] label:hover {
+        color: #1f77b4;
+        background-color: rgba(31, 119, 180, 0.05);
+    }
+    
+    /* Aba selecionada */
+    div[data-testid="stRadio"] label[data-checked="true"] {
+        color: #1f77b4;
+        border-bottom: 3px solid #1f77b4;
+        background-color: transparent;
         font-weight: 600;
+    }
+    
+    /* Esconde o círculo do radio */
+    div[data-testid="stRadio"] label span[data-testid="stMarkdownContainer"] {
+        margin-left: 0 !important;
+    }
+    
+    div[data-testid="stRadio"] input[type="radio"] {
+        display: none !important;
+    }
+    
+    /* Remove a borda padrão do radio selecionado */
+    div[data-testid="stRadio"] label[data-checked="true"]::before {
+        display: none !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -209,7 +260,7 @@ def render_sidebar():
     ano_selecionado = st.sidebar.selectbox(
         "Ano de análise:",
         options=sorted(ANOS_DISPONIVEIS, reverse=True),
-        index=1,  # Default: 2022
+        index=0,  # Default: 2023 (primeiro da lista ordenada decrescente)
         help="Selecione o ano para visualizar os dados. Disponível de 2013 a 2023."
     )
     
@@ -690,8 +741,14 @@ def render_otimizacao(df: pd.DataFrame, ano: int = 2022):
                         title="Investimento por Estado"
                     )
                     fig_alloc.update_traces(texttemplate='R$ %{text:.0f}M', textposition='outside')
-                    fig_alloc.update_layout(height=400)
-                    st.plotly_chart(fig_alloc, use_container_width=True)
+                    fig_alloc.update_layout(
+                        height=400,
+                        margin=dict(t=50, b=50),
+                        xaxis=dict(fixedrange=True),
+                        yaxis=dict(fixedrange=True, range=[0, df_alloc_positivo['investimento_milhoes'].max() * 1.15]),
+                        dragmode=False
+                    )
+                    st.plotly_chart(fig_alloc, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
                 
                 with col_pie:
                     # Alocação por região
@@ -1178,14 +1235,15 @@ def render_monte_carlo(df: pd.DataFrame, ano: int = 2022):
     with st.expander("⚙️ Ajustar Parâmetros", expanded=False):
         col1, col2, col3 = st.columns(3)
         with col1:
-            orcamento = st.slider(
-                "Orçamento (R$ milhões)",
-                min_value=1000.0,
-                max_value=10000.0,
-                value=5000.0,
-                step=500.0,
+            orcamento_bilhoes = st.slider(
+                "Orçamento (R$ bilhões)",
+                min_value=1.0,
+                max_value=20.0,
+                value=5.0,
+                step=1.0,
                 key="mc_orcamento"
             )
+            orcamento = orcamento_bilhoes * 1000  # Converte para milhões
         with col2:
             n_simulacoes = st.selectbox(
                 "Número de Simulações",
@@ -1202,24 +1260,10 @@ def render_monte_carlo(df: pd.DataFrame, ano: int = 2022):
                 step=5,
                 key="mc_variacao"
             )
-        
-        recalcular = st.button("🔄 Recalcular com novos parâmetros", key="btn_mc")
     
-    # Usa cache ou recalcula
-    if recalcular:
-        with st.spinner(f"Executando {n_simulacoes} simulações..."):
-            resultado_mc = executar_monte_carlo(
-                df_dados=df,
-                orcamento=orcamento,
-                n_simulacoes=n_simulacoes,
-                incerteza_elasticidade=variacao / 100,
-                incerteza_taxa=variacao / 100 * 0.5,
-                verbose=False
-            )
-            n_sim_display = n_simulacoes
-    else:
-        resultado_mc = obter_monte_carlo_padrao(df)
-        n_sim_display = 250
+    # Calcula com os parâmetros atuais (usa cache interno)
+    resultado_mc = obter_monte_carlo_padrao(df)
+    n_sim_display = 250
     
     # Métricas resumo
     st.subheader("📊 Resultados da Simulação")
@@ -2004,40 +2048,52 @@ def main():
         st.error(f"Erro ao carregar dados: {e}")
         st.stop()
     
-    # Abas principais - 8 abas com todas as funcionalidades
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
+    # Lista de abas disponíveis
+    ABAS = [
         "📊 Dashboard",
         "⚙️ Otimização",
-        "📈 Comparativo",
-        "🔍 Sensibilidade",
         "🎲 Monte Carlo",
-        "🔄 Backtesting",
         "📅 Multi-Período",
         "📋 Conclusões"
-    ])
+    ]
     
-    with tab1:
+    # Usa query params para persistir a aba selecionada
+    query_params = st.query_params
+    aba_param = query_params.get("aba", "0")
+    try:
+        aba_index = int(aba_param)
+        if aba_index < 0 or aba_index >= len(ABAS):
+            aba_index = 0
+    except:
+        aba_index = 0
+    
+    # Seletor de aba usando radio horizontal (persiste estado)
+    aba_selecionada = st.radio(
+        "Navegação",
+        options=ABAS,
+        index=aba_index,
+        horizontal=True,
+        label_visibility="collapsed",
+        key="aba_principal"
+    )
+    
+    # Atualiza query param quando a aba muda
+    novo_index = ABAS.index(aba_selecionada)
+    if novo_index != aba_index:
+        st.query_params["aba"] = str(novo_index)
+    
+    st.markdown("---")
+    
+    # Renderiza conteúdo baseado na aba selecionada
+    if aba_selecionada == "📊 Dashboard":
         render_dashboard(df, geojson, ano_selecionado)
-    
-    with tab2:
+    elif aba_selecionada == "⚙️ Otimização":
         render_otimizacao(df, ano_selecionado)
-    
-    with tab3:
-        render_comparativo(df, ano_selecionado)
-    
-    with tab4:
-        render_sensibilidade(df, ano_selecionado)
-    
-    with tab5:
+    elif aba_selecionada == "🎲 Monte Carlo":
         render_monte_carlo(df, ano_selecionado)
-    
-    with tab6:
-        render_backtesting(df, ano_selecionado)
-    
-    with tab7:
+    elif aba_selecionada == "📅 Multi-Período":
         render_multi_periodo(df, ano_selecionado)
-    
-    with tab8:
+    elif aba_selecionada == "📋 Conclusões":
         render_conclusoes(df, ano_selecionado)
     
     # Footer

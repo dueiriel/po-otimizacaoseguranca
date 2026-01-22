@@ -159,7 +159,7 @@ def analisar_sensibilidade_elasticidade(
 def calcular_shadow_prices(
     df_dados: pd.DataFrame,
     orcamento: float,
-    delta: float = 1.0
+    delta: float = 100.0
 ) -> Dict[str, float]:
     """
     Calcula os preços-sombra (shadow prices) das restrições.
@@ -176,6 +176,7 @@ def calcular_shadow_prices(
         df_dados: DataFrame com dados consolidados
         orcamento: Orçamento base
         delta: Variação para calcular derivada numérica (R$ milhões)
+               Usar delta maior (100) para capturar variação marginal corretamente
     
     Returns:
         Dicionário com preços-sombra por restrição
@@ -183,7 +184,7 @@ def calcular_shadow_prices(
     # Resultado base
     resultado_base = otimizar_alocacao(df_dados, orcamento)
     
-    # Variação no orçamento total
+    # Variação no orçamento total (usa delta maior para capturar variação)
     resultado_mais = otimizar_alocacao(df_dados, orcamento + delta)
     resultado_menos = otimizar_alocacao(df_dados, orcamento - delta)
     
