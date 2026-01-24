@@ -14,8 +14,8 @@ def calcular_dea_ccr(df: pd.DataFrame) -> pd.DataFrame:
     com ÊNFASE NO RESULTADO (baixa taxa de homicídios).
     
     Modelo com pesos fixos (Assurance Region DEA):
-    - 80% do peso para o RESULTADO (segurança = baixa taxa de homicídios)
-    - 20% do peso para o CUSTO (economia = baixo gasto per capita)
+    - 75% do peso para o RESULTADO (segurança = baixa taxa de homicídios)
+    - 25% do peso para o CUSTO (economia = baixo gasto per capita)
     
     Isso garante que estados com BAIXA TAXA de homicídios sejam priorizados,
     mesmo que gastem mais que outros estados.
@@ -35,7 +35,7 @@ def calcular_dea_ccr(df: pd.DataFrame) -> pd.DataFrame:
     df_dea = df.copy()
     
     # =========================================================================
-    # COMPONENTE 1: RESULTADO (80% do peso)
+    # COMPONENTE 1: RESULTADO (75% do peso)
     # Quanto MENOR a taxa de homicídios, MAIOR a pontuação
     # =========================================================================
     taxa_min = df_dea['taxa_mortes_100k'].min()
@@ -45,7 +45,7 @@ def calcular_dea_ccr(df: pd.DataFrame) -> pd.DataFrame:
     # BA (taxa 43.9) -> 7.5/43.9 = 0.17
     
     # =========================================================================
-    # COMPONENTE 2: CUSTO (20% do peso)
+    # COMPONENTE 2: CUSTO (25% do peso)
     # Quanto MENOR o gasto per capita (para mesmo resultado), MAIOR a pontuação
     # =========================================================================
     gasto_min = df_dea['gasto_per_capita'].min()
@@ -55,10 +55,10 @@ def calcular_dea_ccr(df: pd.DataFrame) -> pd.DataFrame:
     # BA (gasto 391) -> 325/391 = 0.83
     
     # =========================================================================
-    # EFICIÊNCIA FINAL: 80% resultado + 20% custo
+    # EFICIÊNCIA FINAL: 75% resultado + 25% custo
     # =========================================================================
-    PESO_RESULTADO = 0.80  # Taxa de homicídios (quanto menor, melhor)
-    PESO_CUSTO = 0.20      # Gasto per capita (quanto menor, melhor)
+    PESO_RESULTADO = 0.75  # Taxa de homicídios (quanto menor, melhor)
+    PESO_CUSTO = 0.25      # Gasto per capita (quanto menor, melhor)
     
     df_dea['eficiencia_dea'] = (
         PESO_RESULTADO * df_dea['score_resultado'] + 

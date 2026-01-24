@@ -868,13 +868,26 @@ def render_otimizacao(df: pd.DataFrame, ano: int = 2022):
         
         else:
             st.error(f"❌ Não foi possível encontrar solução ótima. Status: {resultado.status}")
-            st.info("""
-            Possíveis causas:
-            - Orçamento muito baixo para atender restrições mínimas
-            - Parâmetros inconsistentes (máximo < mínimo)
             
-            Tente ajustar os parâmetros e executar novamente.
-            """)
+            if 'SolverError' in resultado.status:
+                st.warning("""
+                **Erro no solver CBC.** Isso pode acontecer quando:
+                - O problema tem restrições impossíveis de satisfazer
+                - O orçamento é muito baixo para os limites mínimos configurados
+                
+                **Sugestões:**
+                1. Aumente o orçamento disponível
+                2. Reduza o investimento mínimo por estado (%)
+                3. Tente com ano diferente (alguns anos têm dados mais completos)
+                """)
+            else:
+                st.info("""
+                **Possíveis causas:**
+                - Orçamento muito baixo para atender restrições mínimas
+                - Parâmetros inconsistentes (máximo < mínimo)
+                
+                Tente ajustar os parâmetros e executar novamente.
+                """)
 
 
 # =============================================================================
@@ -925,7 +938,12 @@ def render_comparativo(df: pd.DataFrame, ano: int = 2022):
         fonte = "padrão (R$ 5 bi)"
     
     if resultado.status != 'Optimal':
-        st.error("❌ A otimização não encontrou solução ótima.")
+        st.error(f"❌ A otimização não encontrou solução ótima. Status: {resultado.status}")
+        st.warning("""
+        **Possíveis causas:**
+        - Parâmetros incompatíveis (ex: orçamento muito baixo para os limites definidos)
+        - Tente aumentar o orçamento ou ajustar os limites mínimo/máximo por estado
+        """)
         return
     
     st.info(f"📊 Exibindo cenário **{fonte}**. Ajuste na aba Otimização para personalizar.")
@@ -1857,8 +1875,8 @@ def render_conclusoes(df: pd.DataFrame, ano: int = 2022):
     com **custo** (gasto per capita).
     
     **Pesos do Modelo:**
-    - **80%** - Resultado (quanto menor a taxa de homicídios, melhor)
-    - **20%** - Economia (quanto menor o gasto para o mesmo resultado, melhor)
+    - **75%** - Resultado (quanto menor a taxa de homicídios, melhor)
+    - **25%** - Economia (quanto menor o gasto para o mesmo resultado, melhor)
     """)
     
     # Calcula eficiência DEA
@@ -1909,8 +1927,8 @@ def render_conclusoes(df: pd.DataFrame, ano: int = 2022):
     st.info("""
     💡 **Interpretação:** 
     - A eficiência é **relativa** - compara cada estado com o melhor desempenho
-    - **80% do peso** é dado ao **resultado** (baixa taxa de homicídios)
-    - **20% do peso** é dado à **economia** (baixo gasto per capita)
+    - **75% do peso** é dado ao **resultado** (baixa taxa de homicídios)
+    - **25% do peso** é dado à **economia** (baixo gasto per capita)
     - Estados com alta eficiência conseguem bons resultados de segurança
     """)
     

@@ -204,8 +204,19 @@ def otimizar_alocacao(
     # É um solver open-source eficiente para Programação Linear
     solver = PULP_CBC_CMD(msg=verbose)
     
-    # Resolve o problema
-    modelo.solve(solver)
+    # Resolve o problema com tratamento de erros
+    try:
+        modelo.solve(solver)
+    except Exception as e:
+        # Se o solver falhar, retorna status de erro
+        return ResultadoOtimizacao(
+            status=f'SolverError: {str(e)[:50]}',
+            orcamento_usado=0.0,
+            reducao_crimes=0.0,
+            reducao_percentual=0.0,
+            alocacao=pd.DataFrame(),
+            fo_valor=0.0
+        )
     
     # ==========================================================================
     # EXTRAÇÃO DOS RESULTADOS
