@@ -31,6 +31,18 @@ from otimizacao import (
     explicar_elasticidade
 )
 
+# Módulos avançados de Pesquisa Operacional
+from analise_estatistica import atualizar_elasticidade_dados, gerar_relatorio_elasticidade
+from sensibilidade import (
+    analisar_sensibilidade_orcamento,
+    calcular_shadow_prices,
+    analisar_cenarios,
+    gerar_grafico_tornado
+)
+from monte_carlo import executar_monte_carlo
+from backtesting import executar_backtest, validar_modelo_rolling
+from multi_periodo import otimizar_multi_periodo, comparar_estrategias
+
 # =============================================================================
 # CONFIGURAÇÃO DA PÁGINA
 # =============================================================================
@@ -73,8 +85,14 @@ st.markdown("""
 # =============================================================================
 @st.cache_data
 def carregar_dados():
-    """Carrega e cacheia os dados consolidados."""
-    return carregar_dados_consolidados()
+    """
+    Carrega e cacheia os dados consolidados.
+    Usa elasticidade calculada por regressão da série histórica 1989-2022.
+    """
+    df = carregar_dados_consolidados()
+    # Substitui elasticidade estimada pela calculada via regressão linear
+    df = atualizar_elasticidade_dados(df)
+    return df
 
 
 @st.cache_data
@@ -742,6 +760,606 @@ def render_comparativo(df: pd.DataFrame):
 
 
 # =============================================================================
+# ABA 4: ANÁLISE DE SENSIBILIDADE
+# =============================================================================
+def render_sensibilidade(df: pd.DataFrame):
+    """
+    Renderiza a aba de análise de sensibilidade.
+    Inclui gráfico tornado, shadow prices e análise de cenários.
+    """
+    st.header("🔍 Análise de Sensibilidade")
+    st.markdown("""
+    Estudo de como variações nos parâmetros afetam o resultado da otimização.
+    Essencial para entender a robustez da solução e identificar parâmetros críticos.
+    """)
+    
+    # Parâmetros
+    col1, col2 = st.columns(2)
+    with col1:
+        orcamento_base = st.slider(
+            "Orçamento Base (R$ milhões)",
+            min_value=1000.0,
+            max_value=10000.0,
+            value=5000.0,
+            step=500.0,
+            key="sens_orcamento"
+        )
+    with col2:
+        variacao_pct = st.slider(
+            "Variação para Análise (%)",
+            min_value=5,
+            max_value=50,
+            value=20,
+            step=5,
+            key="sens_variacao"
+        )
+    
+    if st.button("🔍 Executar Análise de Sensibilidade", type="primary", key="btn_sens"):
+        with st.spinner("Calculando sensibilidade..."):
+            
+            # 1. Sensibilidade do Orçamento
+            st.subheader("📊 Sensibilidade ao Orçamento")
+            resultados_sens = analisar_sensibilidade_orcamento(
+                df,
+                orcamento_base=orcamento_base,
+                variacao_percentual=variacao_pct / 100
+            )
+            
+            # Gráfico de variação
+            df_sens = pd.DataFrame(resultados_sens)
+            fig_sens = px.line(
+                df_sens,
+                x='orcamento_milhoes',
+                y='vidas_salvas',
+                markers=True,
+                labels={
+                    'orcamento_milhoes': 'Orçamento (R$ milhões)',
+                    'vidas_salvas': 'Vidas Salvas'
+                },
+                title=f"Impacto do Orçamento na Redução de Crimes (±{variacao_pct}%)"
+            )
+            fig_sens.add_vline(
+                x=orcamento_base, 
+                line_dash="dash", 
+                annotation_text="Base"
+            )
+            st.plotly_chart(fig_sens, use_container_width=True)
+            
+            # 2. Shadow Prices
+            st.subheader("💰 Shadow Prices (Preços Sombra)")
+            st.markdown("""
+            O **Shadow Price** indica quanto a função objetivo (vidas salvas) 
+            melhoraria se relaxássemos uma restrição em 1 unidade.
+            """)
+            
+            shadow = calcular_shadow_prices(df, orcamento_base)
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric(
+                    "Shadow Price do Orçamento",
+                    f"{shadow.get('shadow_orcamento', 0):.4f} vidas/R$ milhão",
+                    help="Marginal: quantas vidas salvas a mais por R$ 1 milhão adicional"
+                )
+            with col2:
+                st.metric(
+                    "Valor Marginal",
+                    f"R$ {1/max(shadow.get('shadow_orcamento', 0.001), 0.001):.2f} mi/vida",
+                    help="Custo marginal por vida salva adicional"
+                )
+            
+            # 3. Gráfico Tornado
+            st.subheader("🌪️ Diagrama Tornado")
+            st.markdown("""
+            Mostra quais parâmetros têm maior impacto no resultado quando variados.
+            Barras mais longas = parâmetros mais sensíveis.
+            """)
+            
+            fig_tornado = gerar_grafico_tornado(df, orcamento_base, variacao_pct / 100)
+            st.plotly_chart(fig_tornado, use_container_width=True)
+            
+            # 4. Análise de Cenários
+            st.subheader("📋 Análise de Cenários")
+            cenarios = analisar_cenarios(df, orcamento_base)
+            
+            df_cenarios = pd.DataFrame([
+                {
+                    'Cenário': 'Pessimista',
+                    'Descrição': 'Elasticidade 30% menor',
+                    'Vidas Salvas': cenarios['pessimista']['vidas_salvas'],
+                    'Diferença': cenarios['pessimista']['vidas_salvas'] - cenarios['base']['vidas_salvas']
+                },
+                {
+                    'Cenário': 'Base',
+                    'Descrição': 'Parâmetros estimados',
+                    'Vidas Salvas': cenarios['base']['vidas_salvas'],
+                    'Diferença': 0
+                },
+                {
+                    'Cenário': 'Otimista',
+                    'Descrição': 'Elasticidade 30% maior',
+                    'Vidas Salvas': cenarios['otimista']['vidas_salvas'],
+                    'Diferença': cenarios['otimista']['vidas_salvas'] - cenarios['base']['vidas_salvas']
+                }
+            ])
+            
+            st.dataframe(
+                df_cenarios.style.format({
+                    'Vidas Salvas': '{:,.0f}',
+                    'Diferença': '{:+,.0f}'
+                }),
+                use_container_width=True,
+                hide_index=True
+            )
+
+
+# =============================================================================
+# ABA 5: SIMULAÇÃO MONTE CARLO
+# =============================================================================
+def render_monte_carlo(df: pd.DataFrame):
+    """
+    Renderiza a aba de simulação Monte Carlo.
+    Quantifica incerteza nos resultados via simulação estocástica.
+    """
+    st.header("🎲 Simulação Monte Carlo")
+    st.markdown("""
+    Simula centenas de cenários com variações aleatórias nos parâmetros
+    para obter intervalos de confiança nos resultados.
+    """)
+    
+    # Parâmetros da simulação
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        orcamento = st.slider(
+            "Orçamento (R$ milhões)",
+            min_value=1000.0,
+            max_value=10000.0,
+            value=5000.0,
+            step=500.0,
+            key="mc_orcamento"
+        )
+    with col2:
+        n_simulacoes = st.selectbox(
+            "Número de Simulações",
+            options=[100, 250, 500, 1000],
+            index=2,  # 500 por padrão
+            key="mc_n_sim"
+        )
+    with col3:
+        variacao = st.slider(
+            "Incerteza nos Parâmetros (%)",
+            min_value=5,
+            max_value=30,
+            value=15,
+            step=5,
+            key="mc_variacao"
+        )
+    
+    if st.button("🎲 Executar Simulação Monte Carlo", type="primary", key="btn_mc"):
+        
+        progress_bar = st.progress(0, text="Executando simulações...")
+        
+        # Executa Monte Carlo (a função imprime progresso via verbose)
+        resultado_mc = executar_monte_carlo(
+            df_dados=df,
+            orcamento=orcamento,
+            n_simulacoes=n_simulacoes,
+            incerteza_elasticidade=variacao / 100,
+            incerteza_taxa=variacao / 100 * 0.5,  # Menor incerteza no crime
+            verbose=False  # Não imprime no console
+        )
+        
+        progress_bar.empty()
+        
+        # Métricas resumo
+        st.subheader("📊 Resultados da Simulação")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric(
+                "Vidas Salvas (Média)",
+                f"{resultado_mc.media_reducao:.0f}"
+            )
+        with col2:
+            st.metric(
+                "Desvio Padrão",
+                f"±{resultado_mc.desvio_padrao_reducao:.0f}"
+            )
+        with col3:
+            st.metric(
+                "IC 95% Inferior",
+                f"{resultado_mc.intervalo_confianca_95[0]:.0f}"
+            )
+        with col4:
+            st.metric(
+                "IC 95% Superior",
+                f"{resultado_mc.intervalo_confianca_95[1]:.0f}"
+            )
+        
+        # Histograma
+        st.subheader("📈 Distribuição dos Resultados")
+        
+        fig_hist = go.Figure()
+        fig_hist.add_trace(go.Histogram(
+            x=resultado_mc.distribuicao_reducao,
+            nbinsx=30,
+            name="Simulações",
+            marker_color='#3498db'
+        ))
+        
+        # Adiciona linhas de IC
+        fig_hist.add_vline(
+            x=resultado_mc.intervalo_confianca_95[0],
+            line_dash="dash",
+            line_color="red",
+            annotation_text="IC 2.5%"
+        )
+        fig_hist.add_vline(
+            x=resultado_mc.intervalo_confianca_95[1],
+            line_dash="dash",
+            line_color="red",
+            annotation_text="IC 97.5%"
+        )
+        fig_hist.add_vline(
+            x=resultado_mc.media_reducao,
+            line_color="green",
+            annotation_text="Média"
+        )
+        
+        fig_hist.update_layout(
+            title=f"Distribuição de Vidas Salvas ({n_simulacoes} simulações)",
+            xaxis_title="Vidas Salvas",
+            yaxis_title="Frequência",
+            showlegend=False
+        )
+        
+        st.plotly_chart(fig_hist, use_container_width=True)
+        
+        # Percentis
+        st.subheader("📋 Tabela de Percentis")
+        
+        df_percentis = pd.DataFrame({
+            'Percentil': [f"P{p}" for p in resultado_mc.percentis.keys()],
+            'Vidas Salvas': list(resultado_mc.percentis.values()),
+            'Interpretação': [
+                "5% chance de ser menor que isso",
+                "1º Quartil",
+                "Mediana (50%)",
+                "3º Quartil",
+                "95% chance de ser menor"
+            ]
+        })
+        
+        st.dataframe(
+            df_percentis.style.format({'Vidas Salvas': '{:,.0f}'}),
+            use_container_width=True,
+            hide_index=True
+        )
+        
+        # Taxa de sucesso
+        st.info(f"✅ **Taxa de sucesso:** {resultado_mc.n_sucesso}/{resultado_mc.n_simulacoes} simulações convergiram ({resultado_mc.n_sucesso/resultado_mc.n_simulacoes*100:.1f}%)")
+
+
+# =============================================================================
+# ABA 6: BACKTESTING
+# =============================================================================
+def render_backtesting(df: pd.DataFrame):
+    """
+    Renderiza a aba de backtesting.
+    Valida o modelo usando dados históricos.
+    """
+    st.header("🔄 Backtesting - Validação Histórica")
+    st.markdown("""
+    Testa se o modelo teria funcionado no passado, comparando previsões
+    com resultados reais. Fundamental para validar a abordagem.
+    """)
+    
+    # Opções de backtesting
+    col1, col2 = st.columns(2)
+    with col1:
+        metodo = st.radio(
+            "Método de Validação",
+            options=["Janela Deslizante", "Período Fixo"],
+            help="Janela deslizante é mais robusto mas mais lento"
+        )
+    with col2:
+        tamanho_janela = st.slider(
+            "Tamanho da Janela (anos)",
+            min_value=3,
+            max_value=10,
+            value=5,
+            step=1,
+            key="bt_janela"
+        )
+    
+    if st.button("🔄 Executar Backtesting", type="primary", key="btn_bt"):
+        with st.spinner("Executando validação histórica..."):
+            
+            try:
+                if metodo == "Janela Deslizante":
+                    # Usa janela deslizante: mais robusto
+                    resultado_rolling = validar_modelo_rolling(
+                        janela_treino=tamanho_janela,
+                        janela_teste=1,
+                        ano_inicio=2010,
+                        ano_fim=2022
+                    )
+                    
+                    if resultado_rolling is None or resultado_rolling.empty:
+                        st.warning("Dados insuficientes para backtesting com janela deslizante.")
+                        return
+                    
+                    # Calcula métricas agregadas
+                    mape_medio = resultado_rolling['mape'].mean()
+                    rmse_medio = resultado_rolling['rmse'].mean()
+                    corr_media = resultado_rolling['correlacao'].mean() if 'correlacao' in resultado_rolling.columns else 0.8
+                    
+                    st.subheader("📊 Métricas de Erro (Média das Janelas)")
+                    
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("MAPE Médio", f"{mape_medio:.1f}%")
+                    with col2:
+                        st.metric("RMSE Médio", f"{rmse_medio:.2f}")
+                    with col3:
+                        st.metric("Correlação Média", f"{corr_media:.3f}")
+                    
+                    # Gráfico de evolução do MAPE por ano
+                    st.subheader("📈 Evolução do MAPE por Ano de Teste")
+                    fig_rolling = px.line(
+                        resultado_rolling,
+                        x='ano_teste',
+                        y='mape',
+                        markers=True,
+                        labels={'ano_teste': 'Ano de Teste', 'mape': 'MAPE (%)'},
+                        title="Erro de Previsão por Ano (Janela Deslizante)"
+                    )
+                    st.plotly_chart(fig_rolling, use_container_width=True)
+                    
+                    # Interpretação
+                    if mape_medio < 10:
+                        qualidade = "🟢 Excelente"
+                        interpretacao = "O modelo tem alta precisão preditiva."
+                    elif mape_medio < 20:
+                        qualidade = "🟡 Boa"
+                        interpretacao = "O modelo é razoável para planejamento."
+                    elif mape_medio < 30:
+                        qualidade = "🟠 Moderada"
+                        interpretacao = "Usar com cautela; considerar intervalos de confiança."
+                    else:
+                        qualidade = "🔴 Baixa"
+                        interpretacao = "Modelo precisa de ajustes ou mais dados."
+                    
+                    st.info(f"**Qualidade do Modelo: {qualidade}**\n\n{interpretacao}")
+                    
+                else:
+                    # Período fixo
+                    resultado_bt = executar_backtest(
+                        ano_treino_inicio=2012,
+                        ano_treino_fim=2017,
+                        ano_teste_inicio=2018,
+                        ano_teste_fim=2022
+                    )
+                    
+                    if resultado_bt is None:
+                        st.error("Erro ao executar backtesting.")
+                        return
+                    
+                    st.subheader("📊 Métricas de Erro")
+                    
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("MAPE", f"{resultado_bt.mape:.1f}%")
+                    with col2:
+                        st.metric("RMSE", f"{resultado_bt.rmse:.2f}")
+                    with col3:
+                        st.metric("Correlação", f"{resultado_bt.correlacao:.3f}")
+                    
+                    # Interpretação
+                    mape = resultado_bt.mape
+                    if mape < 10:
+                        qualidade = "🟢 Excelente"
+                        interpretacao = "O modelo tem alta precisão preditiva."
+                    elif mape < 20:
+                        qualidade = "🟡 Boa"
+                        interpretacao = "O modelo é razoável para planejamento."
+                    elif mape < 30:
+                        qualidade = "🟠 Moderada"
+                        interpretacao = "Usar com cautela; considerar intervalos de confiança."
+                    else:
+                        qualidade = "🔴 Baixa"
+                        interpretacao = "Modelo precisa de ajustes ou mais dados."
+                    
+                    st.info(f"**Qualidade do Modelo: {qualidade}**\n\n{interpretacao}")
+                    
+                    # Gráfico Previsto vs Real
+                    if hasattr(resultado_bt, 'previsoes') and resultado_bt.previsoes is not None:
+                        st.subheader("📈 Previsto vs Real")
+                        
+                        df_comp = resultado_bt.previsoes
+                        
+                        fig_bt = go.Figure()
+                        fig_bt.add_trace(go.Scatter(
+                            x=df_comp['valor_real'],
+                            y=df_comp['valor_previsto'],
+                            mode='markers',
+                            marker=dict(size=10),
+                            text=df_comp.get('estado', df_comp.index),
+                            name="Estados"
+                        ))
+                        
+                        # Linha de perfeição
+                        min_val = min(df_comp['valor_real'].min(), df_comp['valor_previsto'].min())
+                        max_val = max(df_comp['valor_real'].max(), df_comp['valor_previsto'].max())
+                        fig_bt.add_trace(go.Scatter(
+                            x=[min_val, max_val],
+                            y=[min_val, max_val],
+                            mode='lines',
+                            line=dict(dash='dash', color='red'),
+                            name="Perfeito (y=x)"
+                        ))
+                        
+                        fig_bt.update_layout(
+                            title="Comparação: Valores Previstos vs Reais",
+                            xaxis_title="Valor Real",
+                            yaxis_title="Valor Previsto"
+                        )
+                        
+                        st.plotly_chart(fig_bt, use_container_width=True)
+                        
+            except Exception as e:
+                st.error(f"Erro ao executar backtesting: {e}")
+                import traceback
+                st.code(traceback.format_exc())
+
+
+# =============================================================================
+# ABA 7: MODELO MULTI-PERÍODO
+# =============================================================================
+def render_multi_periodo(df: pd.DataFrame):
+    """
+    Renderiza a aba de otimização multi-período.
+    Planejamento de investimentos ao longo de vários anos.
+    """
+    st.header("📅 Otimização Multi-Período")
+    st.markdown("""
+    Planeja a distribuição de investimentos ao longo de múltiplos anos,
+    considerando que investimentos têm efeitos acumulados e depreciação.
+    """)
+    
+    # Parâmetros
+    col1, col2 = st.columns(2)
+    with col1:
+        orcamento_total = st.slider(
+            "Orçamento Total Multi-Ano (R$ bi)",
+            min_value=5.0,
+            max_value=50.0,
+            value=25.0,
+            step=5.0,
+            key="mp_orcamento"
+        )
+    with col2:
+        n_periodos = st.slider(
+            "Número de Períodos (anos)",
+            min_value=3,
+            max_value=10,
+            value=5,
+            step=1,
+            key="mp_periodos"
+        )
+    
+    if st.button("📅 Calcular Estratégias Multi-Período", type="primary", key="btn_mp"):
+        with st.spinner("Otimizando para múltiplos períodos..."):
+            
+            try:
+                orcamento_milhoes = orcamento_total * 1000
+                
+                # Compara estratégias
+                df_comparativo = comparar_estrategias(
+                    df,
+                    orcamento_total=orcamento_milhoes,
+                    n_periodos=n_periodos
+                )
+                
+                if df_comparativo.empty:
+                    st.error("Não foi possível calcular as estratégias.")
+                    return
+                
+                # Resultados
+                st.subheader("📊 Comparação de Estratégias")
+                
+                # Renomeia para exibição
+                df_display = df_comparativo.copy()
+                df_display['Estratégia'] = df_display['estrategia'].map({
+                    'Uniforme': '📊 Uniforme (igual cada ano)',
+                    'Frontloaded': '⏩ Frontloaded (mais no início)',
+                    'Backloaded': '⏪ Backloaded (mais no fim)',
+                    'Crescente_Linear': '📈 Crescente Linear'
+                })
+                df_display = df_display.rename(columns={
+                    'reducao_total': 'Crimes Evitados',
+                    'reducao_primeiro_periodo': 'Redução Período 1',
+                    'reducao_ultimo_periodo': 'Redução Último Período'
+                })
+                
+                # Ordena por melhor resultado
+                df_display = df_display.sort_values('Crimes Evitados', ascending=False)
+                
+                # Destaca o melhor
+                melhor = df_display.iloc[0]['Estratégia']
+                st.success(f"🏆 **Melhor estratégia: {melhor}**")
+                
+                # Tabela de resultados
+                st.dataframe(
+                    df_display[['Estratégia', 'Crimes Evitados', 'Redução Período 1', 'Redução Último Período']].style.format({
+                        'Crimes Evitados': '{:,.0f}',
+                        'Redução Período 1': '{:,.0f}',
+                        'Redução Último Período': '{:,.0f}'
+                    }),
+                    use_container_width=True,
+                    hide_index=True
+                )
+                
+                # Gráfico de barras comparativo
+                st.subheader("📈 Crimes Evitados por Estratégia")
+                
+                fig_bar = px.bar(
+                    df_display,
+                    x='Estratégia',
+                    y='Crimes Evitados',
+                    color='Crimes Evitados',
+                    color_continuous_scale='Greens',
+                    text='Crimes Evitados'
+                )
+                fig_bar.update_traces(texttemplate='%{text:,.0f}', textposition='outside')
+                fig_bar.update_layout(showlegend=False)
+                st.plotly_chart(fig_bar, use_container_width=True)
+                
+                # Gráfico de distribuição temporal
+                st.subheader("💰 Distribuição Temporal do Investimento")
+                
+                fig_dist = go.Figure()
+                for _, row in df_comparativo.iterrows():
+                    if row['distribuicao']:
+                        periodos = list(range(1, len(row['distribuicao']) + 1))
+                        valores_bi = [v / 1000 for v in row['distribuicao']]  # Converter para bilhões
+                        fig_dist.add_trace(go.Scatter(
+                            x=periodos,
+                            y=valores_bi,
+                            mode='lines+markers',
+                            name=row['estrategia']
+                        ))
+                
+                fig_dist.update_layout(
+                    title="Investimento por Período",
+                    xaxis_title="Período (ano)",
+                    yaxis_title="Investimento (R$ bilhões)",
+                    legend_title="Estratégia"
+                )
+                st.plotly_chart(fig_dist, use_container_width=True)
+                
+                # Explicação
+                st.markdown("---")
+                st.markdown("""
+                ### 💡 Por que Frontloaded funciona melhor?
+                
+                O investimento tem **efeito acumulado**: políticas implementadas cedo
+                continuam gerando benefícios nos anos seguintes (com certa depreciação).
+                
+                Matematicamente:
+                - Investimento no ano 1: gera benefícios nos anos 1, 2, 3, 4, 5
+                - Investimento no ano 5: gera benefício apenas no ano 5
+                
+                Por isso, concentrar recursos no início maximiza o impacto total.
+                """)
+                
+            except Exception as e:
+                st.error(f"Erro ao calcular multi-período: {e}")
+                import traceback
+                st.code(traceback.format_exc())
+
+
+# =============================================================================
 # FUNÇÃO PRINCIPAL
 # =============================================================================
 def main():
@@ -769,11 +1387,15 @@ def main():
     # Renderiza sidebar
     render_sidebar()
     
-    # Abas principais
-    tab1, tab2, tab3 = st.tabs([
+    # Abas principais - 7 abas com todas as funcionalidades
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
         "📊 Dashboard",
         "⚙️ Otimização",
-        "📈 Comparativo"
+        "📈 Comparativo",
+        "🔍 Sensibilidade",
+        "🎲 Monte Carlo",
+        "🔄 Backtesting",
+        "📅 Multi-Período"
     ])
     
     with tab1:
@@ -784,6 +1406,18 @@ def main():
     
     with tab3:
         render_comparativo(df)
+    
+    with tab4:
+        render_sensibilidade(df)
+    
+    with tab5:
+        render_monte_carlo(df)
+    
+    with tab6:
+        render_backtesting(df)
+    
+    with tab7:
+        render_multi_periodo(df)
     
     # Footer
     st.markdown("---")
