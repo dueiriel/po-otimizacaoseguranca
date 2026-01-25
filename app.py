@@ -1,17 +1,8 @@
 # -*- coding: utf-8 -*-
-# =============================================================================
-# APLICAÇÃO STREAMLIT - OTIMIZAÇÃO DE RECURSOS DE SEGURANÇA PÚBLICA
-# =============================================================================
-# Trabalho Acadêmico - Pesquisa Operacional
-#
-# Esta aplicação permite:
-# 1. Visualizar dados atuais de violência e orçamento por estado (Dashboard)
-# 2. Calcular alocação ótima de recursos (Otimização)
-# 3. Comparar cenários antes e depois (Comparativo)
-#
-# Autor: [Seu Nome]
-# Disciplina: Pesquisa Operacional
-# =============================================================================
+"""
+Otimização de Recursos de Segurança Pública - Trabalho de Pesquisa Operacional
+Programação Linear (Simplex) para alocação ótima entre estados brasileiros.
+"""
 
 import streamlit as st
 import pandas as pd
@@ -23,7 +14,6 @@ import json
 import requests
 from pathlib import Path
 
-# Importa módulos locais
 from dados import carregar_dados_consolidados, obter_coordenadas_estados, ANOS_DISPONIVEIS
 from otimizacao import (
     otimizar_alocacao, 
@@ -32,7 +22,6 @@ from otimizacao import (
     explicar_elasticidade
 )
 
-# Módulos avançados de Pesquisa Operacional
 from analise_estatistica import atualizar_elasticidade_dados, gerar_relatorio_elasticidade
 from sensibilidade import (
     analisar_sensibilidade_orcamento,
@@ -45,9 +34,6 @@ from backtesting import executar_backtest, validar_modelo_rolling
 from multi_periodo import otimizar_multi_periodo, comparar_estrategias
 from dea import calcular_dea_ccr, identificar_benchmarks, calcular_metas, resumo_dea
 
-# =============================================================================
-# CONFIGURAÇÃO DA PÁGINA
-# =============================================================================
 st.set_page_config(
     page_title="Otimização de Segurança Pública",
     page_icon="🔐",
@@ -55,7 +41,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# CSS customizado para melhor visualização
 st.markdown("""
 <style>
     .main-header {
@@ -72,7 +57,6 @@ st.markdown("""
         margin: 0.5rem 0;
     }
     
-    /* Estiliza o radio horizontal para parecer com abas */
     div[data-testid="stHorizontalBlock"]:has(div[data-testid="stRadio"]) {
         background-color: transparent;
         border-bottom: 1px solid #e0e0e0;
@@ -80,14 +64,12 @@ st.markdown("""
         margin-bottom: 1rem;
     }
     
-    /* Container do radio */
     div[data-testid="stRadio"] > div {
         flex-direction: row !important;
         gap: 0 !important;
         background: transparent;
     }
     
-    /* Cada opção do radio (aba) */
     div[data-testid="stRadio"] label {
         background-color: transparent;
         border: none;
@@ -102,13 +84,11 @@ st.markdown("""
         transition: all 0.2s ease;
     }
     
-    /* Hover nas abas */
     div[data-testid="stRadio"] label:hover {
         color: #1f77b4;
         background-color: rgba(31, 119, 180, 0.05);
     }
     
-    /* Aba selecionada */
     div[data-testid="stRadio"] label[data-checked="true"] {
         color: #1f77b4;
         border-bottom: 3px solid #1f77b4;
@@ -116,7 +96,6 @@ st.markdown("""
         font-weight: 600;
     }
     
-    /* Esconde o círculo do radio */
     div[data-testid="stRadio"] label span[data-testid="stMarkdownContainer"] {
         margin-left: 0 !important;
     }
@@ -125,7 +104,6 @@ st.markdown("""
         display: none !important;
     }
     
-    /* Remove a borda padrão do radio selecionado */
     div[data-testid="stRadio"] label[data-checked="true"]::before {
         display: none !important;
     }
@@ -133,35 +111,22 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# =============================================================================
-# CACHE DE DADOS
-# =============================================================================
 @st.cache_data
 def carregar_dados(ano: int = 2022):
-    """
-    Carrega e cacheia os dados consolidados para um ano específico.
-    Usa elasticidade calculada por regressão da série histórica.
-    
-    Args:
-        ano: Ano dos dados (2013-2023)
-    """
+    """Carrega dados consolidados com elasticidade via regressão."""
     df = carregar_dados_consolidados(ano=ano)
-    # Substitui elasticidade estimada pela calculada via regressão linear
     df = atualizar_elasticidade_dados(df)
     return df
 
 
 @st.cache_data
 def carregar_dados_todos_anos():
-    """
-    Carrega dados de todos os anos disponíveis (2013-2023) para análises temporais.
-    """
+    """Carrega dados 2013-2023 para análises temporais."""
     from dados import carregar_gastos_todos_anos, carregar_homicidios
     
     df_gastos = carregar_gastos_todos_anos()
     df_homicidios = carregar_homicidios()
     
-    # Merge gastos com homicídios
     df = pd.merge(
         df_gastos,
         df_homicidios[['sigla', 'ano', 'homicidios']],
@@ -169,7 +134,6 @@ def carregar_dados_todos_anos():
         how='left'
     )
     
-    # Calcula taxa por 100k
     df['taxa_mortes_100k'] = (df['homicidios'] / df['populacao'] * 100000).round(2)
     df['gasto_milhoes'] = (df['gasto_seguranca'] / 1e6).round(2)
     df['gasto_per_capita'] = (df['gasto_seguranca'] / df['populacao']).round(2)
@@ -179,10 +143,7 @@ def carregar_dados_todos_anos():
 
 @st.cache_data
 def carregar_geojson_brasil():
-    """
-    Carrega GeoJSON dos estados brasileiros para o mapa coroplético.
-    Fonte: Instituto Brasileiro de Geografia e Estatística (IBGE)
-    """
+    """Carrega GeoJSON dos estados brasileiros."""
     url = "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson"
     
     try:
@@ -192,30 +153,24 @@ def carregar_geojson_brasil():
     except:
         pass
     
-    # Fallback: retorna None se não conseguir carregar
     return None
 
 
-# =============================================================================
-# FUNÇÕES PRÉ-CALCULADAS (valores padrão)
-# =============================================================================
 @st.cache_data
 def obter_otimizacao_padrao(_df):
-    """Calcula otimização com parâmetros padrão para exibição inicial."""
+    """Otimização com parâmetros padrão."""
     return otimizar_alocacao(_df, orcamento_disponivel=5000, verbose=False)
 
 
 @st.cache_data
 def obter_sensibilidade_padrao(_df):
-    """Calcula análise de sensibilidade com parâmetros padrão."""
+    """Análise de sensibilidade com parâmetros padrão."""
     sens = analisar_sensibilidade_orcamento(_df, orcamento_base=5000)
     shadow = calcular_shadow_prices(_df, orcamento=5000)
     
-    # Análise de cenários precisa de dicionário
     cenarios_dict = {'pessimista': 3000, 'base': 5000, 'otimista': 7000}
     cenarios_df = analisar_cenarios(_df, cenarios_dict)
     
-    # Converte para formato esperado
     cenarios = {}
     for _, row in cenarios_df.iterrows():
         cenarios[row['cenario']] = {'vidas_salvas': row['reducao_crimes']}
@@ -226,11 +181,11 @@ def obter_sensibilidade_padrao(_df):
 
 @st.cache_data
 def obter_monte_carlo_padrao(_df):
-    """Executa Monte Carlo com parâmetros padrão (menos simulações para ser rápido)."""
+    """Monte Carlo com parâmetros padrão (250 simulações)."""
     return executar_monte_carlo(
         df_dados=_df,
         orcamento=5000,
-        n_simulacoes=250,  # Menos para carregar rápido
+        n_simulacoes=250,
         incerteza_elasticidade=0.15,
         incerteza_taxa=0.08,
         verbose=False
@@ -239,25 +194,21 @@ def obter_monte_carlo_padrao(_df):
 
 @st.cache_data
 def obter_backtesting_padrao():
-    """Executa backtesting com parâmetros padrão."""
+    """Backtesting com parâmetros padrão."""
     return validar_modelo_rolling(janela_treino=5, janela_teste=1, ano_inicio=2010, ano_fim=2022)
 
 
 @st.cache_data  
 def obter_multiperiodo_padrao(_df):
-    """Calcula estratégias multi-período com parâmetros padrão."""
+    """Multi-período com parâmetros padrão."""
     return comparar_estrategias(_df, orcamento_total=25000, n_periodos=5)
 
 
-# =============================================================================
-# SIDEBAR - EXPLICAÇÃO DO MODELO
-# =============================================================================
 def render_sidebar():
-    """Renderiza a sidebar com explicação educacional do modelo e seletor de ano."""
+    """Sidebar com seletor de ano e explicação do modelo."""
     
     st.sidebar.title("📅 Seleção de Ano")
     
-    # Seletor de ano
     ano_selecionado = st.sidebar.selectbox(
         "Ano de análise:",
         options=sorted(ANOS_DISPONIVEIS, reverse=True),
@@ -321,11 +272,8 @@ def render_sidebar():
     return ano_selecionado
 
 
-# =============================================================================
-# ABA 1: DASHBOARD
-# =============================================================================
 def render_dashboard(df: pd.DataFrame, geojson, ano: int):
-    """Renderiza a aba de Dashboard com visualizações dos dados atuais."""
+    """Aba Dashboard: visualização dos dados atuais."""
     
     st.header(f"📊 Dashboard - Situação em {ano}")
     
@@ -356,7 +304,6 @@ def render_dashboard(df: pd.DataFrame, geojson, ano: int):
     
     st.markdown(f"Visualização dos dados de violência e orçamento de segurança pública por estado ({ano}).")
     
-    # Métricas resumo
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
@@ -393,17 +340,14 @@ def render_dashboard(df: pd.DataFrame, geojson, ano: int):
     
     st.markdown("---")
     
-    # Mapa e gráficos
     col_mapa, col_grafico = st.columns([1.2, 1])
     
     with col_mapa:
         st.subheader("🗺️ Mapa de Calor - Taxa de Mortes por 100 mil hab.")
         
-        # Prepara dados para o mapa
         df_mapa = df.copy()
         
         if geojson:
-            # Mapa coroplético com GeoJSON
             fig_mapa = px.choropleth(
                 df_mapa,
                 geojson=geojson,
@@ -429,7 +373,6 @@ def render_dashboard(df: pd.DataFrame, geojson, ano: int):
                 visible=False
             )
         else:
-            # Fallback: mapa de pontos se não conseguir carregar GeoJSON
             coords = obter_coordenadas_estados()
             df_mapa = pd.merge(df_mapa, coords, on='sigla')
             
@@ -463,7 +406,6 @@ def render_dashboard(df: pd.DataFrame, geojson, ano: int):
     with col_grafico:
         st.subheader("📈 Ranking Completo - Taxa de Violência por Estado")
         
-        # Mostra TODOS os 27 estados ordenados
         df_ranking = df.sort_values('taxa_mortes_100k', ascending=True)
         
         fig_bar = px.bar(
@@ -489,9 +431,6 @@ def render_dashboard(df: pd.DataFrame, geojson, ano: int):
         )
         st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
     
-    # =========================================================================
-    # GRÁFICOS DE GASTO PER CAPITA
-    # =========================================================================
     st.markdown("---")
     col_mapa_gasto, col_grafico_gasto = st.columns([1, 1.2])
     
@@ -584,7 +523,6 @@ def render_dashboard(df: pd.DataFrame, geojson, ano: int):
         )
         st.plotly_chart(fig_bar_gasto, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
     
-    # Gráfico de comparativo por região
     st.markdown("---")
     st.subheader("🗺️ Comparativo por Região")
     
@@ -634,7 +572,6 @@ def render_dashboard(df: pd.DataFrame, geojson, ano: int):
     )
     st.plotly_chart(fig_regiao, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
     
-    # Tabela de dados
     st.markdown("---")
     with st.expander("📋 Ver Tabela de Dados Completa"):
         df_tabela = df[[
@@ -658,11 +595,8 @@ def render_dashboard(df: pd.DataFrame, geojson, ano: int):
         )
 
 
-# =============================================================================
-# ABA 2: OTIMIZAÇÃO
-# =============================================================================
 def render_otimizacao(df: pd.DataFrame, ano: int = 2022):
-    """Renderiza a aba de Otimização com controles e resultados."""
+    """Aba Otimização: controles e resultados da PL."""
     
     st.header(f"⚙️ Otimização - Alocação de Recursos ({ano})")
     
@@ -701,7 +635,6 @@ def render_otimizacao(df: pd.DataFrame, ano: int = 2022):
     a alocação ótima de recursos que minimiza o número de crimes esperados.
     """)
     
-    # Controles de entrada
     st.markdown("### 📝 Parâmetros do Modelo")
     
     col1, col2, col3 = st.columns(3)
@@ -739,7 +672,6 @@ def render_otimizacao(df: pd.DataFrame, ano: int = 2022):
     
     st.markdown("---")
     
-    # Botão de execução
     if st.button("🚀 Calcular Alocação Ótima", type="primary", use_container_width=True):
         
         with st.spinner("Executando otimização via Simplex..."):
@@ -751,18 +683,15 @@ def render_otimizacao(df: pd.DataFrame, ano: int = 2022):
                 verbose=False
             )
         
-        # Armazena resultado no session state
         st.session_state['resultado_otimizacao'] = resultado
         st.session_state['orcamento_usado'] = orcamento_milhoes
     
-    # Exibe resultados se existirem
     if 'resultado_otimizacao' in st.session_state:
         resultado = st.session_state['resultado_otimizacao']
         
         if resultado.status == 'Optimal':
             st.success(f"✅ Solução ótima encontrada!")
             
-            # Métricas de resultado
             col1, col2, col3, col4 = st.columns(4)
             
             with col1:
@@ -779,7 +708,6 @@ def render_otimizacao(df: pd.DataFrame, ano: int = 2022):
                 )
             
             with col3:
-                # Custo por vida salva
                 custo_por_vida = resultado.orcamento_usado / resultado.reducao_crimes if resultado.reducao_crimes > 0 else 0
                 st.metric(
                     "Custo por Vida Salva",
@@ -795,7 +723,6 @@ def render_otimizacao(df: pd.DataFrame, ano: int = 2022):
             
             st.markdown("---")
             
-            # Gráfico de alocação
             st.subheader("📊 Distribuição da Alocação")
             
             df_alloc = resultado.alocacao.sort_values('investimento_milhoes', ascending=False)
@@ -830,7 +757,6 @@ def render_otimizacao(df: pd.DataFrame, ano: int = 2022):
                     st.plotly_chart(fig_alloc, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
                 
                 with col_pie:
-                    # Alocação por região
                     df_regiao = resultado.alocacao.groupby('regiao')['investimento_milhoes'].sum().reset_index()
                     df_regiao = df_regiao[df_regiao['investimento_milhoes'] > 0]
                     
@@ -843,7 +769,6 @@ def render_otimizacao(df: pd.DataFrame, ano: int = 2022):
                     fig_pie.update_layout(height=400)
                     st.plotly_chart(fig_pie, use_container_width=True)
             
-            # Tabela detalhada
             st.subheader("📋 Detalhamento por Estado")
             
             df_detalhe = resultado.alocacao[[
@@ -890,11 +815,8 @@ def render_otimizacao(df: pd.DataFrame, ano: int = 2022):
                 """)
 
 
-# =============================================================================
-# ABA 3: COMPARATIVO
-# =============================================================================
 def render_comparativo(df: pd.DataFrame, ano: int = 2022):
-    """Renderiza a aba de Comparativo Antes vs. Depois."""
+    """Aba Comparativo: antes vs. depois da otimização."""
     
     st.header("📊 Comparativo - Antes vs. Depois")
     
@@ -929,7 +851,6 @@ def render_comparativo(df: pd.DataFrame, ano: int = 2022):
         automaticamente. Caso contrário, exibe o cenário padrão (R$ 5 bilhões).
         """)
     
-    # Usa resultado da session_state se existir, senão usa o pré-calculado
     if 'resultado_otimizacao' in st.session_state:
         resultado = st.session_state['resultado_otimizacao']
         fonte = "personalizado"
@@ -952,11 +873,10 @@ def render_comparativo(df: pd.DataFrame, ano: int = 2022):
     **Cenário analisado:** Orçamento suplementar de **R$ {resultado.orcamento_usado/1000:.2f} bilhões**
     """)
     
-    # Gráfico comparativo de barras - TODOS os estados
     st.subheader("📈 Comparativo de Mortes por Estado (Antes × Depois)")
     
     df_comp = resultado.alocacao.copy()
-    df_comp = df_comp.sort_values('mortes_antes', ascending=True)  # Todos os estados
+    df_comp = df_comp.sort_values('mortes_antes', ascending=True)
     
     fig_comp = go.Figure()
     
@@ -982,7 +902,7 @@ def render_comparativo(df: pd.DataFrame, ano: int = 2022):
     
     fig_comp.update_layout(
         barmode='group',
-        height=750,  # Maior para caber todos os 27 estados
+        height=750,
         xaxis_title="Número de Mortes Violentas",
         yaxis_title="Estado",
         legend_title="Cenário",
@@ -991,7 +911,6 @@ def render_comparativo(df: pd.DataFrame, ano: int = 2022):
     
     st.plotly_chart(fig_comp, use_container_width=True)
     
-    # Resumo por região
     st.markdown("---")
     st.subheader("🗺️ Impacto por Região")
     
@@ -1038,7 +957,6 @@ def render_comparativo(df: pd.DataFrame, ano: int = 2022):
         fig_reducao.update_layout(height=400)
         st.plotly_chart(fig_reducao, use_container_width=True)
     
-    # Análise de eficiência
     st.markdown("---")
     st.subheader("💡 Análise de Eficiência")
     
@@ -1107,14 +1025,8 @@ def render_comparativo(df: pd.DataFrame, ano: int = 2022):
         """)
 
 
-# =============================================================================
-# ABA 4: ANÁLISE DE SENSIBILIDADE
-# =============================================================================
 def render_sensibilidade(df: pd.DataFrame, ano: int = 2022):
-    """
-    Renderiza a aba de análise de sensibilidade.
-    Inclui gráfico tornado, shadow prices e análise de cenários.
-    """
+    """Aba Sensibilidade: tornado, shadow prices e cenários."""
     st.header(f"🔍 Análise de Sensibilidade ({ano})")
     
     with st.expander("ℹ️ **Sobre esta aba** - Clique para expandir", expanded=False):
@@ -1154,7 +1066,6 @@ def render_sensibilidade(df: pd.DataFrame, ano: int = 2022):
     Essencial para entender a robustez da solução e identificar parâmetros críticos.
     """)
     
-    # Parâmetros para recalcular
     with st.expander("⚙️ Ajustar Parâmetros", expanded=False):
         col1, col2 = st.columns(2)
         with col1:
@@ -1178,7 +1089,6 @@ def render_sensibilidade(df: pd.DataFrame, ano: int = 2022):
         
         recalcular = st.button("🔄 Recalcular com novos parâmetros", key="btn_sens")
     
-    # Usa cache ou recalcula
     if recalcular:
         with st.spinner("Calculando sensibilidade..."):
             resultados_sens = analisar_sensibilidade_orcamento(df, orcamento_base=orcamento_base)
@@ -1196,7 +1106,6 @@ def render_sensibilidade(df: pd.DataFrame, ano: int = 2022):
             
             fig_tornado = gerar_grafico_tornado(df, orcamento=orcamento_base)
     else:
-        # Usa valores pré-calculados
         dados_sens = obter_sensibilidade_padrao(df)
         resultados_sens = dados_sens['sensibilidade']
         shadow = dados_sens['shadow']
@@ -1205,7 +1114,6 @@ def render_sensibilidade(df: pd.DataFrame, ano: int = 2022):
         orcamento_base = 5000
         variacao_pct = 20
     
-    # 1. Sensibilidade do Orçamento
     st.subheader("📊 Sensibilidade ao Orçamento")
     df_sens = resultados_sens if isinstance(resultados_sens, pd.DataFrame) else pd.DataFrame(resultados_sens)
     fig_sens = px.line(
@@ -1222,7 +1130,6 @@ def render_sensibilidade(df: pd.DataFrame, ano: int = 2022):
     fig_sens.add_vline(x=orcamento_base, line_dash="dash", annotation_text="Base")
     st.plotly_chart(fig_sens, use_container_width=True)
     
-    # 2. Shadow Prices
     st.subheader("💰 Shadow Prices (Preços Sombra)")
     st.markdown("""
     O **Shadow Price** indica quanto a função objetivo (vidas salvas) 
@@ -1243,7 +1150,6 @@ def render_sensibilidade(df: pd.DataFrame, ano: int = 2022):
             help="Custo marginal por vida salva adicional"
         )
     
-    # 3. Gráfico Tornado
     st.subheader("🌪️ Diagrama Tornado")
     st.markdown("""
     Mostra quais parâmetros têm maior impacto no resultado quando variados.
@@ -1251,7 +1157,6 @@ def render_sensibilidade(df: pd.DataFrame, ano: int = 2022):
     """)
     st.plotly_chart(fig_tornado, use_container_width=True)
     
-    # 4. Análise de Cenários
     st.subheader("📋 Análise de Cenários")
     df_cenarios = pd.DataFrame([
         {
@@ -1284,14 +1189,8 @@ def render_sensibilidade(df: pd.DataFrame, ano: int = 2022):
     )
 
 
-# =============================================================================
-# ABA 5: SIMULAÇÃO MONTE CARLO
-# =============================================================================
 def render_monte_carlo(df: pd.DataFrame, ano: int = 2022):
-    """
-    Renderiza a aba de simulação Monte Carlo.
-    Quantifica incerteza nos resultados via simulação estocástica.
-    """
+    """Aba Monte Carlo: simulação estocástica."""
     st.header("🎲 Simulação Monte Carlo")
     
     with st.expander("ℹ️ **Sobre esta aba** - Clique para expandir", expanded=False):
@@ -1332,7 +1231,6 @@ def render_monte_carlo(df: pd.DataFrame, ano: int = 2022):
     para obter intervalos de confiança nos resultados.
     """)
     
-    # Parâmetros da simulação
     with st.expander("⚙️ Ajustar Parâmetros", expanded=False):
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -1362,7 +1260,6 @@ def render_monte_carlo(df: pd.DataFrame, ano: int = 2022):
                 key="mc_variacao"
             )
     
-    # Botão para executar simulação
     if st.button("🚀 Executar Simulação Monte Carlo", type="primary", use_container_width=True):
         with st.spinner(f"Executando {n_simulacoes} simulações... Aguarde..."):
             resultado_mc = executar_monte_carlo(
@@ -1370,14 +1267,13 @@ def render_monte_carlo(df: pd.DataFrame, ano: int = 2022):
                 orcamento=orcamento,
                 n_simulacoes=n_simulacoes,
                 incerteza_elasticidade=variacao/100,
-                incerteza_taxa=variacao/200,  # Metade da incerteza para taxa
+                incerteza_taxa=variacao/200,
                 verbose=False
             )
             st.session_state['resultado_mc'] = resultado_mc
             st.session_state['mc_n_sim_display'] = n_simulacoes
         st.success("✅ Simulação concluída!")
     
-    # Usa resultado da sessão ou padrão
     if 'resultado_mc' in st.session_state:
         resultado_mc = st.session_state['resultado_mc']
         n_sim_display = st.session_state.get('mc_n_sim_display', 250)
@@ -1385,7 +1281,6 @@ def render_monte_carlo(df: pd.DataFrame, ano: int = 2022):
         resultado_mc = obter_monte_carlo_padrao(df)
         n_sim_display = 250
     
-    # Métricas resumo
     st.subheader("📊 Resultados da Simulação")
     
     col1, col2, col3, col4 = st.columns(4)
@@ -1398,7 +1293,6 @@ def render_monte_carlo(df: pd.DataFrame, ano: int = 2022):
     with col4:
         st.metric("IC 95% Superior", f"{resultado_mc.intervalo_confianca_95[1]:.0f}")
     
-    # Histograma
     st.subheader("📈 Distribuição dos Resultados")
     
     fig_hist = go.Figure()
@@ -1424,7 +1318,6 @@ def render_monte_carlo(df: pd.DataFrame, ano: int = 2022):
     
     st.plotly_chart(fig_hist, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
     
-    # Percentis
     st.subheader("📋 Tabela de Percentis")
     
     df_percentis = pd.DataFrame({
@@ -1448,14 +1341,8 @@ def render_monte_carlo(df: pd.DataFrame, ano: int = 2022):
     st.info(f"✅ **Taxa de sucesso:** {resultado_mc.n_sucesso}/{resultado_mc.n_simulacoes} simulações convergiram ({resultado_mc.n_sucesso/resultado_mc.n_simulacoes*100:.1f}%)")
 
 
-# =============================================================================
-# ABA 6: BACKTESTING
-# =============================================================================
 def render_backtesting(df: pd.DataFrame, ano: int = 2022):
-    """
-    Renderiza a aba de backtesting.
-    Valida o modelo usando dados históricos.
-    """
+    """Aba Backtesting: validação histórica."""
     st.header("🔄 Backtesting - Validação Histórica")
     
     with st.expander("ℹ️ **Sobre esta aba** - Clique para expandir", expanded=False):
@@ -1502,7 +1389,6 @@ def render_backtesting(df: pd.DataFrame, ano: int = 2022):
     com resultados reais. Fundamental para validar a abordagem.
     """)
     
-    # Opções de backtesting
     with st.expander("⚙️ Ajustar Parâmetros", expanded=False):
         col1, col2 = st.columns(2)
         with col1:
@@ -1524,7 +1410,6 @@ def render_backtesting(df: pd.DataFrame, ano: int = 2022):
         recalcular = st.button("🔄 Recalcular com novos parâmetros", key="btn_bt")
     
     try:
-        # Usa cache ou recalcula
         if recalcular:
             with st.spinner("Executando validação histórica..."):
                 if metodo == "Janela Deslizante":
@@ -1543,7 +1428,6 @@ def render_backtesting(df: pd.DataFrame, ano: int = 2022):
             st.warning("Dados insuficientes para backtesting.")
             return
         
-        # Calcula métricas agregadas
         mape_medio = resultado_rolling['mape'].mean()
         rmse_medio = resultado_rolling['rmse'].mean()
         corr_media = resultado_rolling['correlacao'].mean() if 'correlacao' in resultado_rolling.columns else 0.8
@@ -1558,7 +1442,6 @@ def render_backtesting(df: pd.DataFrame, ano: int = 2022):
         with col3:
             st.metric("Correlação Média", f"{corr_media:.3f}")
         
-        # Gráfico de evolução do MAPE por ano
         st.subheader("📈 Evolução do MAPE por Ano de Teste")
         fig_rolling = px.line(
             resultado_rolling,
@@ -1570,7 +1453,6 @@ def render_backtesting(df: pd.DataFrame, ano: int = 2022):
         )
         st.plotly_chart(fig_rolling, use_container_width=True)
         
-        # Interpretação
         if mape_medio < 10:
             qualidade = "🟢 Excelente"
             interpretacao = "O modelo tem alta precisão preditiva."
@@ -1590,14 +1472,8 @@ def render_backtesting(df: pd.DataFrame, ano: int = 2022):
         st.error(f"Erro ao executar backtesting: {e}")
 
 
-# =============================================================================
-# ABA 7: MODELO MULTI-PERÍODO
-# =============================================================================
 def render_multi_periodo(df: pd.DataFrame, ano: int = 2022):
-    """
-    Renderiza a aba de otimização multi-período.
-    Planejamento de investimentos ao longo de vários anos.
-    """
+    """Aba Multi-Período: planejamento multi-ano."""
     st.header("📅 Otimização Multi-Período")
     
     with st.expander("ℹ️ **Sobre esta aba** - Clique para expandir", expanded=False):
@@ -1641,7 +1517,6 @@ def render_multi_periodo(df: pd.DataFrame, ano: int = 2022):
     considerando que investimentos têm efeitos acumulados e depreciação.
     """)
     
-    # Parâmetros
     with st.expander("⚙️ Ajustar Parâmetros", expanded=False):
         col1, col2 = st.columns(2)
         with col1:
@@ -1666,7 +1541,6 @@ def render_multi_periodo(df: pd.DataFrame, ano: int = 2022):
         recalcular = st.button("🔄 Recalcular com novos parâmetros", key="btn_mp")
     
     try:
-        # Usa cache ou recalcula
         if recalcular:
             with st.spinner("Otimizando para múltiplos períodos..."):
                 orcamento_milhoes = orcamento_total * 1000
@@ -1680,10 +1554,8 @@ def render_multi_periodo(df: pd.DataFrame, ano: int = 2022):
             st.error("Não foi possível calcular as estratégias.")
             return
         
-        # Resultados
         st.subheader("📊 Comparação de Estratégias")
         
-        # Renomeia para exibição
         df_display = df_comparativo.copy()
         df_display['Estratégia'] = df_display['estrategia'].map({
             'Uniforme': '📊 Uniforme (igual cada ano)',
@@ -1712,7 +1584,6 @@ def render_multi_periodo(df: pd.DataFrame, ano: int = 2022):
             hide_index=True
         )
         
-        # Gráfico de barras comparativo
         st.subheader("📈 Crimes Evitados por Estratégia")
         
         fig_bar = px.bar(
@@ -1732,7 +1603,6 @@ def render_multi_periodo(df: pd.DataFrame, ano: int = 2022):
         )
         st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
         
-        # Gráfico de distribuição temporal
         st.subheader("💰 Distribuição Temporal do Investimento")
         
         fig_dist = go.Figure()
@@ -1758,7 +1628,6 @@ def render_multi_periodo(df: pd.DataFrame, ano: int = 2022):
         )
         st.plotly_chart(fig_dist, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
         
-        # Explicação
         st.markdown("---")
         st.markdown("""
         ### 💡 Por que Frontloaded funciona melhor?
@@ -1776,13 +1645,8 @@ def render_multi_periodo(df: pd.DataFrame, ano: int = 2022):
         st.error(f"Erro ao calcular multi-período: {e}")
 
 
-# =============================================================================
-# ABA 8: CONCLUSÕES E EFICIÊNCIA DOS INVESTIMENTOS
-# =============================================================================
 def render_conclusoes(df: pd.DataFrame, ano: int = 2022):
-    """
-    Renderiza a aba de Conclusões com análise de eficiência de investimentos por estado.
-    """
+    """Aba Conclusões: eficiência DEA e insights finais."""
     st.header(f"📋 Conclusões - Eficiência dos Investimentos ({ano})")
     
     with st.expander("ℹ️ **Sobre esta aba** - Clique para expandir", expanded=False):
@@ -1806,16 +1670,13 @@ def render_conclusoes(df: pd.DataFrame, ano: int = 2022):
         - **População**: IBGE - Censo/Estimativas 2022
         """)
     
-    # Obtém resultado da otimização
     resultado = obter_otimizacao_padrao(df)
     
-    # Calcula eficiência usando DEA (Data Envelopment Analysis)
     df_efic_calc = calcular_dea_ccr(df)
     resumo_efic = resumo_dea(df_efic_calc)
     
-    # Estados mais e menos eficientes (DEA)
-    top5_efic = df_efic_calc.head(5)  # Já ordenado por eficiência
-    bottom5_efic = df_efic_calc.tail(5).iloc[::-1]  # Inverte para mostrar do pior ao menos pior
+    top5_efic = df_efic_calc.head(5)
+    bottom5_efic = df_efic_calc.tail(5).iloc[::-1]
     
     st.markdown("""
     ### 🎯 Pergunta Central do Estudo
@@ -1872,9 +1733,6 @@ def render_conclusoes(df: pd.DataFrame, ano: int = 2022):
     
     st.markdown("---")
     
-    # =========================================================================
-    # SEÇÃO 1: RANKING DE EFICIÊNCIA - DEA (Data Envelopment Analysis)
-    # =========================================================================
     st.subheader("🏆 Ranking de Eficiência - Análise Envoltória de Dados (DEA)")
     
     st.markdown("""
@@ -1887,11 +1745,9 @@ def render_conclusoes(df: pd.DataFrame, ano: int = 2022):
     - **25%** - Economia (quanto menor o gasto para o mesmo resultado, melhor)
     """)
     
-    # Calcula eficiência DEA
     df_dea = calcular_dea_ccr(df)
     resumo = resumo_dea(df_dea)
     
-    # Métricas resumo simplificadas
     col_m1, col_m2, col_m3 = st.columns(3)
     with col_m1:
         st.metric("Eficiência Média", f"{resumo['eficiencia_media']*100:.1f}%")
@@ -1902,7 +1758,6 @@ def render_conclusoes(df: pd.DataFrame, ano: int = 2022):
     
     st.markdown("---")
     
-    # Categoriza eficiência
     def categorizar_eficiencia_dea(ef):
         if ef >= 0.8:
             return '🟢 Alta eficiência'
@@ -1913,7 +1768,6 @@ def render_conclusoes(df: pd.DataFrame, ano: int = 2022):
     
     df_dea['categoria'] = df_dea['eficiencia_dea'].apply(categorizar_eficiencia_dea)
     
-    # Ranking completo - TABELA VISÍVEL
     st.markdown("### 📋 Ranking Completo de Eficiência - Todos os Estados")
     
     df_ranking = df_dea[['estado', 'sigla', 'regiao', 'gasto_per_capita', 'taxa_mortes_100k', 'eficiencia_percentual', 'categoria']].copy()
@@ -1942,23 +1796,17 @@ def render_conclusoes(df: pd.DataFrame, ano: int = 2022):
     
     st.markdown("---")
     
-    # =========================================================================
-    # SEÇÃO 2: PRINCIPAIS CONCLUSÕES
-    # =========================================================================
     st.subheader("📝 Principais Conclusões do Estudo")
     
-    # Calcula estatísticas para conclusões
     total_mortes = df['mortes_violentas'].sum()
     total_orcamento = df['orcamento_2022_milhoes'].sum()
     media_taxa = df['taxa_mortes_100k'].mean()
     
-    # Estados extremos
     estado_mais_violento = df.loc[df['taxa_mortes_100k'].idxmax()]
     estado_menos_violento = df.loc[df['taxa_mortes_100k'].idxmin()]
     estado_maior_gasto = df.loc[df['gasto_per_capita'].idxmax()]
     estado_menor_gasto = df.loc[df['gasto_per_capita'].idxmin()]
     
-    # Resultados da otimização
     vidas_salvas = resultado.reducao_crimes
     reducao_pct = resultado.reducao_percentual
     
@@ -1997,13 +1845,9 @@ def render_conclusoes(df: pd.DataFrame, ano: int = 2022):
             st.markdown(f"- **{row['estado']}**: {row['reducao_mortes']:,.0f} vidas")
 
 
-# =============================================================================
-# FUNÇÃO PRINCIPAL
-# =============================================================================
 def main():
     """Função principal da aplicação."""
     
-    # Título principal
     st.markdown('<h1 class="main-header">🔐 Otimização de Recursos de Segurança Pública</h1>', 
                 unsafe_allow_html=True)
     st.markdown("""
@@ -2014,10 +1858,8 @@ def main():
     
     st.markdown("---")
     
-    # Renderiza sidebar e obtém o ano selecionado
     ano_selecionado = render_sidebar()
     
-    # Carrega dados do ano selecionado
     try:
         df = carregar_dados(ano=ano_selecionado)
         geojson = carregar_geojson_brasil()
@@ -2025,7 +1867,6 @@ def main():
         st.error(f"Erro ao carregar dados: {e}")
         st.stop()
     
-    # Lista de abas disponíveis
     ABAS = [
         "📊 Dashboard",
         "⚙️ Otimização",
@@ -2034,7 +1875,6 @@ def main():
         "📋 Conclusões"
     ]
     
-    # Usa query params para persistir a aba selecionada
     query_params = st.query_params
     aba_param = query_params.get("aba", "0")
     try:
@@ -2044,7 +1884,6 @@ def main():
     except:
         aba_index = 0
     
-    # Seletor de aba usando radio horizontal (persiste estado)
     aba_selecionada = st.radio(
         "Navegação",
         options=ABAS,
@@ -2054,14 +1893,12 @@ def main():
         key="aba_principal"
     )
     
-    # Atualiza query param quando a aba muda
     novo_index = ABAS.index(aba_selecionada)
     if novo_index != aba_index:
         st.query_params["aba"] = str(novo_index)
     
     st.markdown("---")
     
-    # Renderiza conteúdo baseado na aba selecionada
     if aba_selecionada == "📊 Dashboard":
         render_dashboard(df, geojson, ano_selecionado)
     elif aba_selecionada == "⚙️ Otimização":
@@ -2073,7 +1910,6 @@ def main():
     elif aba_selecionada == "📋 Conclusões":
         render_conclusoes(df, ano_selecionado)
     
-    # Footer
     st.markdown("---")
     st.markdown("""
     <div style="text-align: center; color: #888; font-size: 0.9rem;">
