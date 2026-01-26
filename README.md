@@ -31,7 +31,7 @@ Resolvemos via **Simplex** usando PuLP + CBC solver.
 ## Instalação
 
 ```bash
-git clone https://github.com/seu-usuario/po-atlasviolencia.git
+git clone https://github.com/dueiriel/po-atlasviolencia.git
 cd po-atlasviolencia
 
 python -m venv venv
