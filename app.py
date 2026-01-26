@@ -237,6 +237,32 @@ def render_dashboard(df: pd.DataFrame, geojson):
     """Renderiza a aba de Dashboard com visualizações dos dados atuais."""
     
     st.header("📊 Dashboard - Situação Atual")
+    
+    with st.expander("ℹ️ **Sobre esta aba** - Clique para expandir", expanded=False):
+        st.markdown("""
+        ### O que é o Dashboard?
+        
+        Esta aba apresenta uma **visão geral da situação atual** de segurança pública no Brasil,
+        utilizando dados consolidados do **Atlas da Violência (IPEA)** e do **Anuário de Segurança 
+        Pública (FBSP)** referentes ao ano de 2022.
+        
+        #### Dados exibidos:
+        - **Mortes Violentas**: Número absoluto de homicídios e mortes violentas intencionais
+        - **Taxa por 100 mil hab.**: Métrica normalizada que permite comparar estados de diferentes tamanhos
+        - **Orçamento de Segurança**: Investimento estadual em segurança pública (em milhões de R$)
+        - **Gasto Per Capita**: Quanto cada estado investe por habitante
+        
+        #### Gráficos:
+        - **Mapa de calor**: Visualização geográfica da taxa de violência
+        - **Ranking de estados**: Comparativo de todos os 27 estados brasileiros
+        - **Scatter plot**: Relação entre gasto per capita e taxa de violência
+        - **Por região**: Agrupamento dos estados por região geográfica
+        
+        #### Fonte dos dados:
+        - Atlas da Violência: Série histórica 1989-2022 (IPEA/FBSP)
+        - Anuário Brasileiro de Segurança Pública 2023 (FBSP)
+        """)
+    
     st.markdown("Visualização dos dados de violência e orçamento de segurança pública por estado (2022).")
     
     # Métricas resumo
@@ -343,12 +369,13 @@ def render_dashboard(df: pd.DataFrame, geojson):
         st.plotly_chart(fig_mapa, use_container_width=True)
     
     with col_grafico:
-        st.subheader("📈 Top 10 Estados - Maior Taxa de Violência")
+        st.subheader("📈 Ranking Completo - Taxa de Violência por Estado")
         
-        top10 = df.nlargest(10, 'taxa_mortes_100k').sort_values('taxa_mortes_100k')
+        # Mostra TODOS os 27 estados ordenados
+        df_ranking = df.sort_values('taxa_mortes_100k', ascending=True)
         
         fig_bar = px.bar(
-            top10,
+            df_ranking,
             x='taxa_mortes_100k',
             y='sigla',
             orientation='h',
@@ -359,7 +386,7 @@ def render_dashboard(df: pd.DataFrame, geojson):
         )
         fig_bar.update_traces(texttemplate='%{text:.1f}', textposition='outside')
         fig_bar.update_layout(
-            height=450,
+            height=700,  # Mais alto para caber todos os estados
             showlegend=False,
             coloraxis_showscale=False,
             xaxis_title="Taxa de Mortes por 100 mil hab.",
@@ -464,6 +491,38 @@ def render_otimizacao(df: pd.DataFrame):
     """Renderiza a aba de Otimização com controles e resultados."""
     
     st.header("⚙️ Otimização - Alocação de Recursos")
+    
+    with st.expander("ℹ️ **Sobre esta aba** - Clique para expandir", expanded=False):
+        st.markdown("""
+        ### O que é a Otimização?
+        
+        Esta aba utiliza **Programação Linear** para calcular a distribuição ótima de um orçamento 
+        suplementar de segurança pública entre os 27 estados brasileiros.
+        
+        #### Objetivo:
+        **Minimizar o número total de mortes violentas** no país, distribuindo recursos de forma 
+        inteligente baseada na eficiência de cada estado.
+        
+        #### Como funciona:
+        1. O modelo usa a **elasticidade crime-investimento** de cada estado (calculada por regressão 
+           sobre 34 anos de dados históricos)
+        2. Estados com maior elasticidade recebem mais recursos (pois o investimento é mais eficiente)
+        3. Restrições garantem que nenhum estado fique sem recursos ou receba recursos excessivos
+        
+        #### Parâmetros configuráveis:
+        
+        | Parâmetro | Descrição |
+        |-----------|-----------|
+        | **Orçamento Suplementar** | Valor adicional (além do orçamento atual) a ser distribuído |
+        | **Investimento Mínimo** | % mínimo que cada estado deve receber (proporcional ao seu orçamento atual) |
+        | **Investimento Máximo** | % máximo para evitar concentração excessiva em poucos estados |
+        
+        #### Método de resolução:
+        - **Solver**: PuLP com CBC (Coin-or Branch and Cut)
+        - **Algoritmo**: Simplex com branch-and-bound para variáveis inteiras
+        - **Tempo típico**: < 1 segundo para 27 estados
+        """)
+    
     st.markdown("""
     Configure os parâmetros abaixo e clique em **Calcular** para encontrar 
     a alocação ótima de recursos que minimiza o número de crimes esperados.
@@ -643,6 +702,37 @@ def render_comparativo(df: pd.DataFrame):
     
     st.header("📊 Comparativo - Antes vs. Depois")
     
+    with st.expander("ℹ️ **Sobre esta aba** - Clique para expandir", expanded=False):
+        st.markdown("""
+        ### O que é o Comparativo?
+        
+        Esta aba mostra uma **comparação visual** entre o cenário atual (sem investimento adicional) 
+        e o cenário projetado após a alocação otimizada de recursos.
+        
+        #### Visualizações disponíveis:
+        
+        | Gráfico | O que mostra |
+        |---------|--------------|
+        | **Barras Comparativas** | Mortes antes vs. depois para todos os 27 estados |
+        | **Eficiência por Estado** | Custo por vida salva em cada estado |
+        | **Ranking de Eficiência** | Os estados onde o investimento é mais eficiente |
+        
+        #### Métricas importantes:
+        - **Mortes Antes**: Número de mortes no cenário atual (2022)
+        - **Mortes Depois**: Projeção após o investimento adicional
+        - **Vidas Salvas**: Diferença (redução) no número de mortes
+        - **Custo por Vida**: Quanto custa cada vida salva em cada estado
+        
+        #### Interpretação:
+        - Estados com **menor custo por vida** são mais eficientes
+        - A cor verde indica redução significativa
+        - O modelo prioriza estados onde o investimento tem maior impacto
+        
+        #### Nota:
+        Se você ajustar parâmetros na aba **Otimização**, os resultados aqui serão atualizados 
+        automaticamente. Caso contrário, exibe o cenário padrão (R$ 5 bilhões).
+        """)
+    
     # Usa resultado da session_state se existir, senão usa o pré-calculado
     if 'resultado_otimizacao' in st.session_state:
         resultado = st.session_state['resultado_otimizacao']
@@ -661,11 +751,11 @@ def render_comparativo(df: pd.DataFrame):
     **Cenário analisado:** Orçamento suplementar de **R$ {resultado.orcamento_usado/1000:.2f} bilhões**
     """)
     
-    # Gráfico comparativo de barras
+    # Gráfico comparativo de barras - TODOS os estados
     st.subheader("📈 Comparativo de Mortes por Estado (Antes × Depois)")
     
     df_comp = resultado.alocacao.copy()
-    df_comp = df_comp.sort_values('mortes_antes', ascending=True).tail(15)  # Top 15
+    df_comp = df_comp.sort_values('mortes_antes', ascending=True)  # Todos os estados
     
     fig_comp = go.Figure()
     
@@ -675,7 +765,7 @@ def render_comparativo(df: pd.DataFrame):
         x=df_comp['mortes_antes'],
         orientation='h',
         marker_color='#ff6b6b',
-        text=df_comp['mortes_antes'],
+        text=df_comp['mortes_antes'].apply(lambda x: f'{x:,.0f}'),
         textposition='auto'
     ))
     
@@ -685,17 +775,17 @@ def render_comparativo(df: pd.DataFrame):
         x=df_comp['mortes_depois'],
         orientation='h',
         marker_color='#51cf66',
-        text=df_comp['mortes_depois'],
+        text=df_comp['mortes_depois'].apply(lambda x: f'{x:,.0f}'),
         textposition='auto'
     ))
     
     fig_comp.update_layout(
         barmode='group',
-        height=600,
+        height=750,  # Maior para caber todos os 27 estados
         xaxis_title="Número de Mortes Violentas",
         yaxis_title="Estado",
         legend_title="Cenário",
-        title="Top 15 Estados com Maior Número de Mortes"
+        title="Comparativo Completo - Todos os 27 Estados"
     )
     
     st.plotly_chart(fig_comp, use_container_width=True)
@@ -825,6 +915,39 @@ def render_sensibilidade(df: pd.DataFrame):
     Inclui gráfico tornado, shadow prices e análise de cenários.
     """
     st.header("🔍 Análise de Sensibilidade")
+    
+    with st.expander("ℹ️ **Sobre esta aba** - Clique para expandir", expanded=False):
+        st.markdown("""
+        ### O que é Análise de Sensibilidade?
+        
+        A análise de sensibilidade é uma técnica fundamental em Pesquisa Operacional que avalia 
+        **como variações nos parâmetros de entrada afetam a solução ótima**.
+        
+        #### Por que é importante?
+        - Dados de entrada contêm **incerteza** (elasticidades estimadas, taxas projetadas)
+        - Decisores precisam saber se a solução é **robusta**
+        - Identifica **parâmetros críticos** que merecem maior atenção
+        
+        #### Análises disponíveis:
+        
+        | Análise | Descrição |
+        |---------|-----------|
+        | **Curva de Sensibilidade** | Como o resultado varia com diferentes orçamentos |
+        | **Shadow Prices** | Valor marginal de relaxar a restrição de orçamento |
+        | **Gráfico Tornado** | Ranking dos parâmetros por impacto no resultado |
+        | **Análise de Cenários** | Comparação pessimista / base / otimista |
+        
+        #### Interpretação dos Shadow Prices:
+        - Indica **quantas vidas seriam salvas por R$ 1 milhão adicional**
+        - Um shadow price de 0.5 significa: +R$ 1 mi → +0.5 vidas salvas
+        - Valor alto sugere que mais orçamento seria muito benéfico
+        
+        #### Gráfico Tornado:
+        - Barras mais longas = parâmetros com **maior impacto**
+        - Estados no topo são os mais sensíveis a variações
+        - Útil para priorizar coleta de dados mais precisos
+        """)
+    
     st.markdown("""
     Estudo de como variações nos parâmetros afetam o resultado da otimização.
     Essencial para entender a robustez da solução e identificar parâmetros críticos.
@@ -969,6 +1092,40 @@ def render_monte_carlo(df: pd.DataFrame):
     Quantifica incerteza nos resultados via simulação estocástica.
     """
     st.header("🎲 Simulação Monte Carlo")
+    
+    with st.expander("ℹ️ **Sobre esta aba** - Clique para expandir", expanded=False):
+        st.markdown("""
+        ### O que é Simulação Monte Carlo?
+        
+        Monte Carlo é uma técnica estatística que executa **milhares de simulações** com 
+        variações aleatórias nos parâmetros de entrada para quantificar a **incerteza** 
+        nos resultados.
+        
+        #### Por que usar Monte Carlo?
+        - Os parâmetros do modelo (elasticidades) são **estimativas**, não valores exatos
+        - Queremos saber não apenas o resultado "médio", mas a **distribuição de possíveis resultados**
+        - Permite calcular **intervalos de confiança** (ex: 95% de chance de salvar entre X e Y vidas)
+        
+        #### Como funciona:
+        1. Para cada simulação, gera variações aleatórias nos parâmetros
+        2. Executa a otimização com esses parâmetros perturbados
+        3. Registra o resultado (vidas salvas)
+        4. Após N simulações, analisa a distribuição dos resultados
+        
+        #### Parâmetros configuráveis:
+        
+        | Parâmetro | Descrição |
+        |-----------|-----------|
+        | **Orçamento** | Valor a ser distribuído em todas as simulações |
+        | **Nº de Simulações** | Mais = maior precisão, mas mais lento (500 é um bom equilíbrio) |
+        | **Incerteza** | Quanto os parâmetros podem variar (±15% é típico) |
+        
+        #### Resultados:
+        - **Histograma**: Distribuição dos possíveis resultados
+        - **Intervalo de Confiança 95%**: Faixa onde o resultado real provavelmente estará
+        - **VaR (Value at Risk)**: Resultado no pior caso (5% das simulações)
+        """)
+    
     st.markdown("""
     Simula centenas de cenários com variações aleatórias nos parâmetros
     para obter intervalos de confiança nos resultados.
@@ -1091,6 +1248,46 @@ def render_backtesting(df: pd.DataFrame):
     Valida o modelo usando dados históricos.
     """
     st.header("🔄 Backtesting - Validação Histórica")
+    
+    with st.expander("ℹ️ **Sobre esta aba** - Clique para expandir", expanded=False):
+        st.markdown("""
+        ### O que é Backtesting?
+        
+        Backtesting é uma técnica de **validação** que testa se o modelo teria funcionado 
+        corretamente no passado. É como perguntar: "Se tivéssemos usado este modelo em 2015, 
+        as previsões teriam se confirmado em 2016?"
+        
+        #### Por que é importante?
+        - Modelos podem parecer bons no papel mas falhar na prática
+        - Backtesting usa **dados reais históricos** para testar a abordagem
+        - Aumenta a confiança de que o modelo funcionará no futuro
+        
+        #### Metodologia - Janela Deslizante:
+        1. **Treino (2010-2014)**: Calcula elasticidades usando dados de 5 anos
+        2. **Previsão (2015)**: Prevê taxa de mortes para o próximo ano
+        3. **Comparação**: Compara previsão com o que realmente aconteceu
+        4. **Avança**: Move a janela para 2011-2015 e prevê 2016
+        5. **Repete**: Continua até cobrir todo o período disponível
+        
+        #### Métricas de avaliação:
+        
+        | Métrica | Descrição | Bom valor |
+        |---------|-----------|-----------|
+        | **MAPE** | Erro médio absoluto percentual | < 10% |
+        | **RMSE** | Raiz do erro quadrático médio | Menor = melhor |
+        | **R²** | Coeficiente de determinação | > 0.7 |
+        
+        #### Parâmetros:
+        - **Janela de Treino**: Quantos anos usar para estimar as elasticidades
+        - **Método**: Janela deslizante (mais robusto) ou período fixo (mais simples)
+        
+        #### Interpretação:
+        - MAPE < 5%: Excelente
+        - MAPE 5-10%: Bom
+        - MAPE 10-20%: Aceitável
+        - MAPE > 20%: Modelo precisa de ajustes
+        """)
+    
     st.markdown("""
     Testa se o modelo teria funcionado no passado, comparando previsões
     com resultados reais. Fundamental para validar a abordagem.
@@ -1193,6 +1390,43 @@ def render_multi_periodo(df: pd.DataFrame):
     Planejamento de investimentos ao longo de vários anos.
     """
     st.header("📅 Otimização Multi-Período")
+    
+    with st.expander("ℹ️ **Sobre esta aba** - Clique para expandir", expanded=False):
+        st.markdown("""
+        ### O que é Otimização Multi-Período?
+        
+        Enquanto a otimização simples distribui um orçamento **em um único momento**, 
+        a otimização multi-período planeja investimentos ao longo de **vários anos**.
+        
+        #### Por que multi-período?
+        - Investimentos em segurança têm **efeitos que se acumulam** ao longo do tempo
+        - Orçamentos reais são **anuais**, não únicos
+        - Permite planejar uma **estratégia de longo prazo**
+        
+        #### Estratégias comparadas:
+        
+        | Estratégia | Descrição | Quando usar |
+        |------------|-----------|-------------|
+        | **Uniforme** | Mesmo valor todo ano | Orçamento previsível |
+        | **Frontloaded** | Mais no início, menos no fim | Crise urgente |
+        | **Backloaded** | Menos no início, mais no fim | Orçamento crescente |
+        | **Crescente Linear** | Aumento gradual ano a ano | Crescimento econômico |
+        
+        #### Efeitos considerados:
+        - **Acumulação**: Investimentos passados continuam gerando resultados
+        - **Depreciação**: Parte do efeito se perde com o tempo (equipamentos, treinamento)
+        - **Retornos decrescentes**: Cada R$ adicional tem impacto menor que o anterior
+        
+        #### Parâmetros:
+        - **Orçamento Total**: Soma de todos os investimentos no período
+        - **Número de Períodos**: Quantos anos o plano contempla
+        
+        #### Interpretação:
+        - A estratégia vencedora depende das características do problema
+        - Em geral, **Frontloaded** funciona melhor quando há urgência
+        - **Uniforme** é mais fácil de implementar politicamente
+        """)
+    
     st.markdown("""
     Planeja a distribuição de investimentos ao longo de múltiplos anos,
     considerando que investimentos têm efeitos acumulados e depreciação.
