@@ -23,4 +23,15 @@ geojson>=3.0.0
 
 # Requisições HTTP para baixar dados geográficos
 requests>=2.31.0
-matplotlib
+
+# Visualizações estáticas (gráficos tornado, etc)
+matplotlib>=3.7.0
+
+# Análise estatística (regressões, testes)
+scipy>=1.10.0
+
+# Leitura de arquivos Excel (Anuário FBSP)
+openpyxl>=3.1.0
+
+# Template engine para pandas.style
+jinja2>=3.1.0
