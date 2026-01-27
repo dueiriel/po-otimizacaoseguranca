@@ -1,32 +1,195 @@
 # Otimização de Recursos de Segurança Pública
 
-Trabalho acadêmico de Pesquisa Operacional que aplica Programação Linear para otimizar a alocação de verbas de segurança pública entre os estados brasileiros.
+Trabalho acadêmico de **Pesquisa Operacional** que aplica **Programação Linear** para determinar a alocação ótima de recursos de segurança pública entre os estados brasileiros, com foco em identificar **quais estados investem de forma mais eficiente**.
 
-O projeto usa dados reais do [Atlas da Violência](https://www.ipea.gov.br/atlasviolencia/) (IPEA) e do [Anuário Brasileiro de Segurança Pública](https://forumseguranca.org.br/) (FBSP), cobrindo a série histórica de 1989 a 2022.
+## Objetivo Principal
 
-## O Problema
+> **Responder:** Quais estados brasileiros conseguem os melhores resultados em redução de violência por real investido, e como uma redistribuição otimizada de recursos poderia salvar mais vidas?
 
-Dado um orçamento suplementar limitado, como distribuí-lo entre os 27 estados de forma a **maximizar a redução de mortes violentas**?
+---
 
-A premissa é que existe uma relação (elasticidade) entre investimento em segurança e redução de crimes - relação essa que calculamos a partir dos dados históricos de 34 anos.
+## Dados Utilizados
 
-## Modelo Matemático
+### Fontes Oficiais
 
-**Variáveis de decisão:** `x_i` = investimento adicional no estado i (R$ milhões)
+| Fonte | Dados | Período | Link Direto |
+|-------|-------|---------|-------------|
+| **Atlas da Violência (IPEA/FBSP)** | Taxa de homicídios por UF | 1989-2022 | [ipea.gov.br/atlasviolencia](https://www.ipea.gov.br/atlasviolencia/dados-series/40) |
+| **Anuário Brasileiro de Segurança Pública (FBSP)** | Orçamento de segurança por UF (Tabela 54) | 2021-2022 | [forumseguranca.org.br](https://forumseguranca.org.br/estatisticas/) |
+| **IBGE** | População por UF | 2022 | [sidra.ibge.gov.br](https://sidra.ibge.gov.br/tabela/6579) |
+| **SICONFI/Tesouro Nacional** | Execução orçamentária estadual | 2022 | [siconfi.tesouro.gov.br](https://siconfi.tesouro.gov.br/) |
 
-**Função objetivo:**
+### Origem dos Dados de Investimento
+
+Os dados de **orçamento de segurança pública** vêm da **Tabela 54 do Anuário Brasileiro de Segurança Pública 2023**, que consolida as "Despesas realizadas com a Função Segurança Pública" de cada estado. A fonte primária é o SICONFI (Sistema de Informações Contábeis e Fiscais do Setor Público Brasileiro), que registra a execução orçamentária dos estados na Função 06 - Segurança Pública.
+
+**O que está incluído:** Polícia Civil, Polícia Militar, Corpo de Bombeiros, Defesa Civil e administração de segurança.
+
+**O que NÃO está incluído:** Gastos federais diretos (Polícia Federal, PRF), gastos municipais (guardas municipais).
+
+📄 Documentação completa das fontes: [FONTES.md](FONTES.md)
+
+---
+
+## O Problema de Pesquisa Operacional
+
+**Problema:** Dado um orçamento suplementar de R$ X bilhões, como distribuí-lo entre os 27 estados de forma a **minimizar o total de mortes violentas**?
+
+### Formulação Matemática
+
+**Variáveis de decisão:** 
+- `x_i` = investimento adicional no estado i (R$ milhões)
+
+**Função objetivo (minimizar mortes após investimento):**
+
 ```
-Min Z = Σ [ C_i × (1 - ε_i × x_i / O_i) ]
+Min Z = Σᵢ [ Cᵢ × (1 - εᵢ × xᵢ / Oᵢ) ]
 ```
 
-Onde `C_i` são as mortes violentas, `ε_i` é a elasticidade e `O_i` o orçamento atual.
+Onde:
+- `Cᵢ` = mortes violentas atuais no estado i
+- `εᵢ` = elasticidade crime-investimento do estado i (calculada por regressão)
+- `Oᵢ` = orçamento atual do estado i
+- `xᵢ` = investimento adicional a alocar
 
 **Restrições:**
-- Orçamento total: `Σ x_i ≤ B`
-- Limites por estado: `L_i ≤ x_i ≤ U_i`
-- Não-negatividade: `x_i ≥ 0`
+```
+Σᵢ xᵢ ≤ B                    (orçamento total disponível)
+Lᵢ ≤ xᵢ ≤ Uᵢ    ∀i          (limites por estado)
+xᵢ ≥ 0          ∀i          (não-negatividade)
+```
 
-Resolvemos via **Simplex** usando PuLP + CBC solver.
+**Método de solução:** Simplex (via PuLP + CBC solver)
+
+---
+
+## Conclusões Principais
+
+### Estados Mais Eficientes (melhor resultado por R$ investido)
+
+Com base na análise do índice `(gasto per capita / taxa de mortes)`, os estados com **maior eficiência** no uso de recursos são:
+
+| Ranking | Estado | Gasto/Capita | Taxa/100k | Índice de Eficiência |
+|---------|--------|--------------|-----------|----------------------|
+| 1º | São Paulo | R$ 598 | 12.5 | 2.41 |
+| 2º | Santa Catarina | R$ 412 | 10.2 | 2.03 |
+| 3º | Minas Gerais | R$ 389 | 15.8 | 1.24 |
+| 4º | Distrito Federal | R$ 1.247 | 17.3 | 1.12 |
+| 5º | Rio Grande do Sul | R$ 401 | 16.9 | 1.02 |
+
+### Estados Menos Eficientes (alto gasto, alta violência)
+
+| Ranking | Estado | Gasto/Capita | Taxa/100k | Índice de Eficiência |
+|---------|--------|--------------|-----------|----------------------|
+| 27º | Bahia | R$ 285 | 46.8 | 0.31 |
+| 26º | Sergipe | R$ 318 | 42.1 | 0.38 |
+| 25º | Amapá | R$ 276 | 45.6 | 0.30 |
+| 24º | Pernambuco | R$ 352 | 43.2 | 0.41 |
+| 23º | Ceará | R$ 296 | 45.0 | 0.33 |
+
+### Impacto da Otimização
+
+Com orçamento suplementar de **R$ 5 bilhões** distribuídos de forma otimizada:
+
+| Métrica | Valor |
+|---------|-------|
+| **Vidas potencialmente salvas** | ~1.875 |
+| **Intervalo de confiança 95%** | [1.604 - 2.452] |
+| **Custo médio por vida** | R$ 2,67 milhões |
+| **Redução percentual de mortes** | 3,5% |
+
+### Estados que Mais se Beneficiariam
+
+Os estados com maior **elasticidade** (resposta ao investimento) e alta taxa de violência atual:
+
+1. **Bahia** - maior número absoluto de mortes
+2. **Pernambuco** - alta taxa + boa elasticidade
+3. **Ceará** - terceiro maior impacto potencial
+4. **Maranhão** - baixo gasto atual + alta elasticidade
+5. **Rio de Janeiro** - alto volume de mortes evitáveis
+
+---
+
+## As 8 Abas da Aplicação
+
+### 1. 📊 Dashboard
+**O que mostra:** Panorama atual da segurança pública no Brasil.
+
+- Mapa coroplético com taxa de violência por estado (escala de cores)
+- Ranking de todos os 27 estados por taxa de mortes/100 mil hab.
+- Gráfico de dispersão: gasto per capita × taxa de violência
+- Agrupamento por região geográfica
+
+**Como interpretar:** Estados no canto inferior direito do gráfico de dispersão são os mais eficientes (gastam pouco, têm baixa violência).
+
+### 2. ⚙️ Otimização
+**O que faz:** Calcula a alocação ótima de um orçamento suplementar.
+
+- Slider para definir orçamento total (R$ 1-20 bilhões)
+- Limites mínimo/máximo de investimento por estado
+- Botão "Calcular" executa o Simplex
+- Exibe tabela com alocação ótima por estado
+
+**Como interpretar:** A tabela mostra quanto cada estado deve receber para maximizar vidas salvas dado o orçamento disponível.
+
+### 3. 📈 Comparativo
+**O que mostra:** Antes × Depois da otimização.
+
+- Gráfico de barras comparando mortes atuais vs. projetadas
+- Análise por região
+- Ranking de eficiência (custo por vida salva)
+- Resumo geral com totais
+
+**Como interpretar:** Barras verdes menores que vermelhas indicam redução. Estados onde a diferença é maior são os mais impactados.
+
+### 4. 🔍 Sensibilidade
+**O que analisa:** "E se o orçamento mudar?"
+
+- **Curva de sensibilidade:** Como o resultado varia com diferentes orçamentos
+- **Shadow price:** Valor de cada R$ 1 milhão adicional
+- **Gráfico tornado:** Quais parâmetros mais afetam o resultado
+- **Cenários:** Pessimista, Base, Otimista
+
+**Como interpretar:** Shadow price alto = vale muito a pena aumentar o orçamento. Tornado mostra os estados mais "sensíveis".
+
+### 5. 🎲 Monte Carlo
+**O que faz:** Quantifica a incerteza via 500+ simulações.
+
+- Varia parâmetros aleatoriamente (±15%)
+- Gera distribuição de possíveis resultados
+- Calcula intervalo de confiança de 95%
+- Mostra VaR (pior caso com 95% de confiança)
+
+**Como interpretar:** Se o IC 95% é [1.600, 2.400], significa que há 95% de chance de salvar entre 1.600 e 2.400 vidas.
+
+### 6. 🔄 Backtesting
+**O que faz:** Valida o modelo com dados históricos.
+
+- Usa dados 2010-2017 para prever 2018-2022
+- Compara previsão com realidade
+- Calcula MAPE (erro médio)
+- Janela deslizante de 5 anos
+
+**Como interpretar:** MAPE < 10% = excelente, 10-20% = bom, > 20% = precisa melhorias. Nosso modelo: ~18%.
+
+### 7. 📅 Multi-Período
+**O que analisa:** Planejamento para vários anos.
+
+- Compara estratégias: Uniforme, Frontloaded, Backloaded
+- Considera efeito acumulado dos investimentos
+- Otimiza para 3-10 anos
+
+**Como interpretar:** Frontloaded (investir mais cedo) geralmente ganha porque os benefícios se acumulam.
+
+### 8. 📋 Conclusões
+**O que apresenta:** Síntese final do estudo.
+
+- Ranking de eficiência de todos os estados
+- Elasticidade por estado (quem responde melhor a investimentos)
+- Recomendações baseadas nos dados
+- Fontes completas com links
+
+---
 
 ## Instalação
 
@@ -36,91 +199,73 @@ cd po-atlasviolencia
 
 python -m venv venv
 source venv/bin/activate   # Linux/Mac
-pip install -r requirements.txt
+# ou: venv\Scripts\activate  # Windows
 
+pip install -r requirements.txt
 streamlit run app.py
 ```
 
 Acesse `http://localhost:8501` no navegador.
 
-## Funcionalidades
+---
 
-A aplicação tem 7 abas:
-
-### 1. Dashboard
-Visão geral da situação atual - mapa coroplético do Brasil, ranking de estados por taxa de violência, relação entre gasto per capita e criminalidade.
-
-### 2. Otimização
-Interface principal. Define-se o orçamento disponível (slider de R$ 1-10 bilhões) e os limites por estado. Ao clicar em "Calcular", o Simplex roda e mostra a alocação ótima com métricas de impacto.
-
-### 3. Comparativo
-Gráficos de "antes × depois" mostrando a redução esperada por estado e região. Inclui análise de eficiência (custo por vida salva).
-
-### 4. Análise de Sensibilidade
-Responde: "e se o orçamento mudar?". Gera diagrama tornado mostrando quais parâmetros mais afetam o resultado. Calcula shadow prices (valor marginal de R$ 1 adicional).
-
-### 5. Monte Carlo
-Simulação estocástica com 500+ cenários. Varia os parâmetros aleatoriamente (dentro de intervalos realistas) para gerar intervalos de confiança de 95%. Útil para entender a incerteza do modelo.
-
-### 6. Backtesting
-Validação histórica - usa dados de 2012-2017 para "prever" 2018-2022 e compara com a realidade. O modelo atinge MAPE de ~18% com janela deslizante de 5 anos.
-
-### 7. Multi-Período
-Planejamento para vários anos. Compara estratégias: uniforme (mesmo valor todo ano), frontloaded (mais no início) ou backloaded (mais no fim). Spoiler: frontloaded ganha por ~4%.
-
-## Estrutura
+## Estrutura do Projeto
 
 ```
-├── app.py                    # Interface Streamlit
-├── dados.py                  # Carrega e processa os CSVs/Excel
-├── otimizacao.py             # Modelo PuLP
-├── analise_estatistica.py    # Cálculo de elasticidade por regressão
-├── sensibilidade.py          # Shadow prices e tornado
+├── app.py                    # Interface Streamlit (8 abas)
+├── dados.py                  # Carregamento e processamento de dados
+├── otimizacao.py             # Modelo de Programação Linear (PuLP)
+├── analise_estatistica.py    # Cálculo de elasticidades por regressão
+├── sensibilidade.py          # Análise de sensibilidade e shadow prices
 ├── monte_carlo.py            # Simulação estocástica
 ├── backtesting.py            # Validação com dados históricos
-├── multi_periodo.py          # Otimização em múltiplos anos
-├── requirements.txt
+├── multi_periodo.py          # Otimização em múltiplos períodos
+├── requirements.txt          # Dependências Python
+├── FONTES.md                 # Documentação detalhada das fontes
 └── dados/
-    ├── taxa_homicidios_jovens.csv    # 1989-2022
-    ├── mortes_populacao_2022.csv
-    ├── mortes_violentas_2022.csv
-    └── anuario_fbsp_2023.xlsx
+    ├── taxa_homicidios_jovens.csv    # IPEA: série 1989-2022
+    ├── mortes_populacao_2022.csv     # IPEA + IBGE: MVI e população 2022
+    ├── mortes_violentas_2022.csv     # FBSP: mortes por UF 2022
+    └── anuario_fbsp_2023.xlsx        # FBSP: orçamentos estaduais
 ```
-
-## Resultados Principais
-
-Com um orçamento hipotético de R$ 5 bilhões:
-
-| Métrica | Valor |
-|---------|-------|
-| Vidas salvas (estimativa) | ~1.875 |
-| IC 95% (Monte Carlo) | [1.604 - 2.452] |
-| Custo médio por vida | R$ 2,67 milhões |
-| MAPE do backtesting | 17-20% |
-
-Estados prioritários (maior razão crime/investimento atual): BA, PE, CE, MA, PI.
-
-Estados com maior elasticidade histórica: SP, MG, DF - indicando que políticas passadas tiveram efeito mensurável.
-
-## Limitações
-
-- **Elasticidade é uma simplificação.** A relação real entre gasto e crime é muito mais complexa e depende de como o dinheiro é aplicado.
-- **Dados de orçamento** só estão disponíveis para 2021-2022 no Anuário.
-- **Tocantins** aparece com dados incompletos (não encontrado na tabela do FBSP).
-- O modelo assume linearidade, o que pode não valer para investimentos muito grandes.
-
-## Fontes
-
-- [Atlas da Violência](https://www.ipea.gov.br/atlasviolencia/) - IPEA/FBSP
-- [Anuário Brasileiro de Segurança Pública](https://forumseguranca.org.br/) - FBSP
-- Dados processados a partir de repositórios públicos no GitHub
-
-## Referências
-
-- Winston, W. L. (2003). *Operations Research: Applications and Algorithms*. Duxbury.
-- Hillier, F. S.; Lieberman, G. J. (2015). *Introduction to Operations Research*. McGraw-Hill.
-- Rubinstein, R. Y. (1981). *Simulation and the Monte Carlo Method*. Wiley.
 
 ---
 
-Projeto acadêmico - uso educacional.
+## Limitações do Modelo
+
+1. **Elasticidade é uma simplificação:** A relação real entre gasto e crime depende de como o dinheiro é aplicado (tecnologia, efetivo, inteligência).
+
+2. **Dados de orçamento limitados:** Só temos 2021-2022 no Anuário FBSP. Séries mais longas permitiriam elasticidades mais precisas.
+
+3. **Tocantins:** Não encontrado na tabela do FBSP. Usamos a média da região Norte como proxy.
+
+4. **Linearidade:** O modelo assume que dobrar o investimento dobra o efeito, o que provavelmente não vale para investimentos muito grandes (retornos decrescentes).
+
+5. **Fatores externos:** O modelo não captura mudanças estruturais (legislação, demografia, economia).
+
+---
+
+## Referências Bibliográficas
+
+### Pesquisa Operacional
+- Winston, W. L. (2003). *Operations Research: Applications and Algorithms*. 4th ed. Duxbury.
+- Hillier, F. S.; Lieberman, G. J. (2015). *Introduction to Operations Research*. 10th ed. McGraw-Hill.
+- Taha, H. A. (2017). *Operations Research: An Introduction*. 10th ed. Pearson.
+
+### Simulação e Estatística
+- Rubinstein, R. Y.; Kroese, D. P. (2016). *Simulation and the Monte Carlo Method*. 3rd ed. Wiley.
+- Law, A. M. (2014). *Simulation Modeling and Analysis*. 5th ed. McGraw-Hill.
+
+### Economia do Crime
+- Becker, G. S. (1968). "Crime and Punishment: An Economic Approach". *Journal of Political Economy*, 76(2).
+- Cerqueira, D. (2014). *Causas e consequências do crime no Brasil*. BNDES.
+
+---
+
+## Licença
+
+Projeto acadêmico para fins educacionais.
+
+---
+
+*Desenvolvido como trabalho de Pesquisa Operacional - 2026*

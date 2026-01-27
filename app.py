@@ -1593,11 +1593,69 @@ def render_conclusoes(df: pd.DataFrame):
     # Obtém resultado da otimização
     resultado = obter_otimizacao_padrao(df)
     
+    # Calcula índice de eficiência para usar nas respostas
+    df_efic_calc = df.copy()
+    df_efic_calc['indice_eficiencia'] = (
+        (df_efic_calc['gasto_per_capita'] / df_efic_calc['gasto_per_capita'].mean()) / 
+        (df_efic_calc['taxa_mortes_100k'] / df_efic_calc['taxa_mortes_100k'].mean())
+    ).round(2)
+    
+    # Estados mais e menos eficientes
+    top5_efic = df_efic_calc.nlargest(5, 'indice_eficiencia')
+    bottom5_efic = df_efic_calc.nsmallest(5, 'indice_eficiencia')
+    
     st.markdown("""
     ### 🎯 Pergunta Central do Estudo
     
     > **Quais estados brasileiros estão utilizando seus recursos de segurança pública de forma 
     > mais eficiente, e como uma redistribuição otimizada poderia reduzir a violência?**
+    """)
+    
+    # =========================================================================
+    # RESPOSTA DIRETA E OBJETIVA
+    # =========================================================================
+    st.success("""
+    ## ✅ RESPOSTA DIRETA
+    """)
+    
+    col_resp1, col_resp2 = st.columns(2)
+    
+    with col_resp1:
+        st.markdown("### 🏆 Estados MAIS Eficientes")
+        st.markdown("*Conseguem baixa violência com os recursos disponíveis*")
+        for i, (_, row) in enumerate(top5_efic.iterrows(), 1):
+            st.markdown(f"""
+            **{i}º {row['estado']}** ({row['sigla']})  
+            - Gasto: R$ {row['gasto_per_capita']:,.0f}/hab  
+            - Taxa: {row['taxa_mortes_100k']:.1f}/100k  
+            - Índice: **{row['indice_eficiencia']:.2f}**
+            """)
+    
+    with col_resp2:
+        st.markdown("### ⚠️ Estados MENOS Eficientes")
+        st.markdown("*Alta violência apesar do investimento*")
+        for i, (_, row) in enumerate(bottom5_efic.iterrows(), 1):
+            st.markdown(f"""
+            **{i}º {row['estado']}** ({row['sigla']})  
+            - Gasto: R$ {row['gasto_per_capita']:,.0f}/hab  
+            - Taxa: {row['taxa_mortes_100k']:.1f}/100k  
+            - Índice: **{row['indice_eficiencia']:.2f}**
+            """)
+    
+    st.markdown("---")
+    
+    st.warning(f"""
+    ### 💡 Conclusão Principal
+    
+    Com um investimento adicional otimizado de **R$ 5 bilhões**, o modelo estima que seria 
+    possível salvar aproximadamente **{resultado.reducao_crimes:,.0f} vidas** por ano, 
+    uma redução de **{resultado.reducao_percentual:.2f}%** nas mortes violentas.
+    
+    Os estados que **mais se beneficiariam** são aqueles com:
+    - Alta elasticidade (respondem bem a investimentos)
+    - Alto número absoluto de mortes (maior potencial de impacto)
+    - Baixo gasto per capita atual (margem para crescimento)
+    """)
     """)
     
     st.markdown("---")
@@ -1839,40 +1897,40 @@ def render_conclusoes(df: pd.DataFrame):
     st.markdown("""
     #### Dados de Violência
     
-    | Fonte | Descrição | Período | Acesso |
-    |-------|-----------|---------|--------|
-    | **Atlas da Violência** | Taxas de homicídios por UF | 1989-2022 | [ipea.gov.br/atlasviolencia](https://www.ipea.gov.br/atlasviolencia/) |
-    | **IPEA Data** | Séries históricas de mortes violentas | 1989-2022 | [ipeadata.gov.br](http://www.ipeadata.gov.br/) |
-    | **DATASUS/SIM** | Sistema de Informação sobre Mortalidade | 1996-2022 | [datasus.saude.gov.br](https://datasus.saude.gov.br/) |
+    | Fonte | Descrição | Período | Link Direto |
+    |-------|-----------|---------|-------------|
+    | **Atlas da Violência (IPEA/FBSP)** | Taxas de homicídios por UF | 1989-2022 | [Download dos dados](https://www.ipea.gov.br/atlasviolencia/dados-series/40) |
+    | **DATASUS/SIM** | Sistema de Informação sobre Mortalidade (fonte primária) | 1996-2022 | [TabNet DATASUS](http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sim/cnv/obt10uf.def) |
     
-    #### Dados de Orçamento
+    #### Dados de Orçamento/Investimento
     
-    | Fonte | Descrição | Período | Acesso |
-    |-------|-----------|---------|--------|
-    | **Anuário Brasileiro de Segurança Pública** | Despesas estaduais com segurança | 2021-2022 | [forumseguranca.org.br](https://forumseguranca.org.br/anuario-brasileiro-seguranca-publica/) |
-    | **SICONFI/Tesouro Nacional** | Execução orçamentária dos estados | 2013-2022 | [siconfi.tesouro.gov.br](https://siconfi.tesouro.gov.br/) |
-    | **SINESP** | Sistema Nacional de Segurança Pública | 2015-2022 | [sinesp.gov.br](https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/sinesp-1) |
+    | Fonte | Descrição | Período | Link Direto |
+    |-------|-----------|---------|-------------|
+    | **Anuário FBSP 2023** | Tabela 54: Despesas com Função Segurança Pública | 2021-2022 | [Download Excel](https://forumseguranca.org.br/estatisticas/) |
+    | **SICONFI** | Execução orçamentária estadual (fonte primária) | 2013-2022 | [Portal SICONFI](https://siconfi.tesouro.gov.br/siconfi/pages/public/consulta_finbra/finbra_list.jsf) |
     
     #### Dados Demográficos
     
-    | Fonte | Descrição | Período | Acesso |
-    |-------|-----------|---------|--------|
-    | **IBGE** | Censo e estimativas populacionais | 2022 | [ibge.gov.br](https://www.ibge.gov.br/) |
+    | Fonte | Descrição | Período | Link Direto |
+    |-------|-----------|---------|-------------|
+    | **IBGE - SIDRA** | Projeção populacional por UF | 2022 | [Tabela 6579](https://sidra.ibge.gov.br/tabela/6579) |
     
-    #### Repositórios e APIs (GitHub)
+    #### Arquivos Utilizados no Projeto
     
-    | Repositório | Descrição |
-    |-------------|-----------|
-    | [basedosdados/sdk](https://github.com/basedosdados/sdk) | SDK para acessar dados públicos brasileiros (BigQuery) |
-    | [kahefl/Homicidios-Brasil](https://github.com/kahefl/Homicidios-Brasil) | Dados do SINESP sobre homicídios |
-    | [Diogocenteno/Problema-da-Seguranca-Publica](https://github.com/Diogocenteno/Problema-da-Seguranca-Publica-no-Brasil-e-a-Analise-de-Dados) | Análise de dados de segurança pública |
+    | Arquivo | Conteúdo | Fonte Original |
+    |---------|----------|----------------|
+    | `taxa_homicidios_jovens.csv` | Taxa de homicídios 15-29 anos, 1989-2022 | Atlas da Violência/IPEA |
+    | `mortes_populacao_2022.csv` | MVI + população por UF em 2022 | FBSP + IBGE |
+    | `anuario_fbsp_2023.xlsx` | Anuário completo com tabelas de orçamento | FBSP |
     
-    #### Limitações dos Dados
+    #### ⚠️ Limitações dos Dados
     
-    - **Subnotificação**: Alguns estados têm maior subnotificação de crimes
-    - **Metodologia**: Classificação de "mortes violentas" pode variar entre UFs
-    - **Tocantins**: Dados de orçamento indisponíveis (usamos média regional)
-    - **Elasticidades**: Estimadas por regressão, sujeitas a erros de especificação
+    | Limitação | Impacto | Mitigação |
+    |-----------|---------|-----------|
+    | **Tocantins sem dados de orçamento** | Usamos estimativa | Média da região Norte |
+    | **Orçamento apenas 2021-2022** | Elasticidades menos precisas | Usamos série de violência como proxy |
+    | **Subnotificação** | Varia entre estados | Limitação conhecida |
+    | **Definição de MVI** | Pode variar entre UFs | Seguimos metodologia FBSP |
     """)
 
 
