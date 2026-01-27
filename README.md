@@ -1,5 +1,13 @@
 # Otimização de Recursos de Segurança Pública
 
+**Trabalho Acadêmico de Pesquisa Operacional**
+
+**Integrantes:**
+- Pedro Lucas Dutra
+- Davi Augusto Bitencourt de Souza
+
+---
+
 Trabalho acadêmico de **Pesquisa Operacional** que aplica **Programação Linear** para determinar a alocação ótima de recursos de segurança pública entre os estados brasileiros, com foco em identificar **quais estados investem de forma mais eficiente**.
 
 ## Objetivo Principal
