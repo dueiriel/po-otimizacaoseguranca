@@ -1,44 +1,88 @@
 % =============================================================================
-% TRABALHO DE PESQUISA OPERACIONAL
+% TRABALHO DE PESQUISA OPERACIONAL - NORMAS ABNT
 % Otimização de Recursos de Segurança Pública
 % =============================================================================
 
-\documentclass[12pt,a4paper]{article}
+\documentclass[
+    12pt,               % Tamanho da fonte
+    a4paper,            % Tamanho do papel
+    oneside,            % Impressão em um lado
+    chapter=TITLE,      % Títulos em maiúsculas
+]{article}
 
-% Pacotes essenciais
+% =============================================================================
+% PACOTES
+% =============================================================================
 \usepackage[utf8]{inputenc}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{booktabs}
 \usepackage{tabularx}
-\usepackage{geometry}
 \usepackage{setspace}
 \usepackage{hyperref}
 \usepackage{xcolor}
 \usepackage{caption}
+\usepackage{titlesec}
 
-% Configurações de página
-\geometry{
+% =============================================================================
+% CONFIGURAÇÕES ABNT - Margens
+% =============================================================================
+\usepackage[
     a4paper,
-    left=3cm,
-    right=2cm,
-    top=3cm,
-    bottom=2cm
-}
+    left=3cm,           % Margem esquerda: 3cm (ABNT)
+    right=2cm,          % Margem direita: 2cm (ABNT)
+    top=3cm,            % Margem superior: 3cm (ABNT)
+    bottom=2cm          % Margem inferior: 2cm (ABNT)
+]{geometry}
 
-% Espaçamento
-\onehalfspacing
+% =============================================================================
+% CONFIGURAÇÕES ABNT - Espaçamento
+% =============================================================================
+\onehalfspacing         % Espaçamento 1,5 (ABNT)
+\setlength{\parindent}{1.25cm}  % Recuo de parágrafo: 1,25cm (ABNT)
+\setlength{\parskip}{0pt}       % Sem espaço entre parágrafos
 
-% Configurações de hyperlinks
+% =============================================================================
+% CONFIGURAÇÕES ABNT - Títulos de Seções
+% =============================================================================
+% Seções primárias: maiúsculas, negrito, tamanho 12
+\titleformat{\section}
+    {\normalfont\bfseries\normalsize\MakeUppercase}
+    {\thesection}{1em}{}
+
+% Seções secundárias: maiúsculas, sem negrito, tamanho 12
+\titleformat{\subsection}
+    {\normalfont\normalsize}
+    {\thesubsection}{1em}{}
+
+% Seções terciárias: negrito, tamanho 12
+\titleformat{\subsubsection}
+    {\normalfont\bfseries\normalsize}
+    {\thesubsubsection}{1em}{}
+
+% Espaçamento antes e depois dos títulos
+\titlespacing*{\section}{0pt}{12pt}{6pt}
+\titlespacing*{\subsection}{0pt}{12pt}{6pt}
+\titlespacing*{\subsubsection}{0pt}{12pt}{6pt}
+
+% =============================================================================
+% CONFIGURAÇÕES ABNT - Sumário
+% =============================================================================
+
+% =============================================================================
+% CONFIGURAÇÕES - Hyperlinks
+% =============================================================================
 \hypersetup{
     colorlinks=true,
-    linkcolor=blue!70!black,
-    citecolor=green!50!black,
-    urlcolor=blue!70!black
+    linkcolor=black,
+    citecolor=black,
+    urlcolor=blue
 }
 
-% Caminho das figuras
+% =============================================================================
+% CAMINHO DAS FIGURAS
+% =============================================================================
 \graphicspath{{figuras/}}
 
 % =============================================================================
@@ -46,70 +90,146 @@
 % =============================================================================
 \begin{document}
 
+% =============================================================================
+% ELEMENTOS PRÉ-TEXTUAIS
+% =============================================================================
+
 % -----------------------------------------------------------------------------
-% CAPA
+% CAPA (Elemento obrigatório - ABNT NBR 14724)
 % -----------------------------------------------------------------------------
 \begin{titlepage}
     \centering
-    \vspace*{2cm}
+    \onehalfspacing
     
-    {\Large\bfseries UNIVERSIDADE}\\[0.5cm]
-    {\large Departamento de Engenharia / Ciência da Computação}\\[2cm]
+    % Instituição
+    {\normalsize\MakeUppercase{Universidade}}\\
+    {\normalsize\MakeUppercase{Departamento de Engenharia / Ciência da Computação}}\\
     
-    {\Huge\bfseries Otimização de Recursos de\\Segurança Pública no Brasil}\\[1cm]
-    {\Large Aplicação de Programação Linear para Alocação Eficiente de Verbas Estaduais}\\[3cm]
+    \vspace{4cm}
     
-    {\Large\bfseries Trabalho de Pesquisa Operacional}\\[2cm]
+    % Autores (ordem alfabética do sobrenome)
+    {\normalsize DAVI AUGUSTO BITENCOURT DE SOUZA}\\
+    {\normalsize PEDRO LUCAS DUTRA}\\
     
-    {\large
-    \textbf{Integrantes:}\\[0.5cm]
-    Pedro Lucas Dutra\\
-    Davi Augusto Bitencourt de Souza\\[2cm]
-    }
+    \vspace{4cm}
+    
+    % Título
+    {\Large\bfseries\MakeUppercase{Otimização de Recursos de Segurança Pública no Brasil:}}\\[0.3cm]
+    {\large\MakeUppercase{Aplicação de Programação Linear para Alocação Eficiente de Verbas Estaduais}}\\
     
     \vfill
     
-    {\large Fevereiro de 2026}
+    % Local e data
+    {\normalsize CIDADE}\\
+    {\normalsize 2026}
 \end{titlepage}
 
 % -----------------------------------------------------------------------------
-% RESUMO
+% FOLHA DE ROSTO (Elemento obrigatório - ABNT NBR 14724)
 % -----------------------------------------------------------------------------
-\begin{abstract}
-Este trabalho aplica técnicas de \textbf{Programação Linear} para otimizar a alocação de recursos de segurança pública entre os 27 estados brasileiros. Utilizando dados reais do Atlas da Violência (IPEA/FBSP) e do Anuário Brasileiro de Segurança Pública, desenvolvemos um modelo matemático que determina a distribuição ótima de um orçamento suplementar visando minimizar o número de mortes violentas. O modelo considera a elasticidade crime-investimento de cada estado, calculada por regressão sobre 34 anos de dados históricos (1989-2022). Os resultados indicam que, com um investimento adicional de R\$ 5 bilhões distribuído de forma otimizada, seria possível salvar aproximadamente 1.875 vidas por ano. Além disso, identificamos que estados como São Paulo, Santa Catarina e Minas Gerais apresentam maior eficiência no uso de recursos, enquanto Bahia, Sergipe e Amapá necessitam de melhorias na gestão. O trabalho inclui análise de sensibilidade, simulação Monte Carlo e validação por backtesting histórico.
+\begin{titlepage}
+    \centering
+    \onehalfspacing
+    
+    % Autores
+    {\normalsize DAVI AUGUSTO BITENCOURT DE SOUZA}\\
+    {\normalsize PEDRO LUCAS DUTRA}\\
+    
+    \vspace{4cm}
+    
+    % Título
+    {\Large\bfseries\MakeUppercase{Otimização de Recursos de Segurança Pública no Brasil:}}\\[0.3cm]
+    {\large\MakeUppercase{Aplicação de Programação Linear para Alocação Eficiente de Verbas Estaduais}}\\
+    
+    \vspace{2cm}
+    
+    % Natureza do trabalho (alinhado à direita)
+    \hfill
+    \begin{minipage}{8cm}
+        \singlespacing
+        \small
+        Trabalho apresentado à disciplina de Pesquisa Operacional como requisito parcial para aprovação.\\[0.5cm]
+        Orientador: Prof. [Nome do Orientador]
+    \end{minipage}
+    
+    \vfill
+    
+    % Local e data
+    {\normalsize CIDADE}\\
+    {\normalsize 2026}
+\end{titlepage}
 
-\textbf{Palavras-chave:} Pesquisa Operacional, Programação Linear, Segurança Pública, Otimização, Simplex.
-\end{abstract}
+% -----------------------------------------------------------------------------
+% RESUMO (Elemento obrigatório - ABNT NBR 6028)
+% -----------------------------------------------------------------------------
+\newpage
+\begin{center}
+    \textbf{\MakeUppercase{Resumo}}
+\end{center}
 
+\noindent
+Este trabalho aplica técnicas de Programação Linear para otimizar a alocação de recursos de segurança pública entre os 27 estados brasileiros. Utilizando dados reais do Atlas da Violência (IPEA/FBSP) e do Anuário Brasileiro de Segurança Pública, desenvolvemos um modelo matemático que determina a distribuição ótima de um orçamento suplementar visando minimizar o número de mortes violentas. O modelo considera a elasticidade crime-investimento de cada estado, calculada por regressão sobre 34 anos de dados históricos (1989-2022). Os resultados indicam que, com um investimento adicional de R\$ 5 bilhões distribuído de forma otimizada, seria possível salvar aproximadamente 1.875 vidas por ano. Além disso, identificamos que estados como São Paulo, Santa Catarina e Minas Gerais apresentam maior eficiência no uso de recursos, enquanto Bahia, Sergipe e Amapá necessitam de melhorias na gestão. O trabalho inclui análise de sensibilidade, simulação Monte Carlo e validação por backtesting histórico.\\[0.5cm]
+
+\noindent
+\textbf{Palavras-chave:} Pesquisa Operacional. Programação Linear. Segurança Pública. Otimização. Simplex.
+
+% -----------------------------------------------------------------------------
+% ABSTRACT (Elemento obrigatório para trabalhos em português)
+% -----------------------------------------------------------------------------
 \newpage
-\tableofcontents
+\begin{center}
+    \textbf{\MakeUppercase{Abstract}}
+\end{center}
+
+\noindent
+This work applies Linear Programming techniques to optimize the allocation of public security resources among the 27 Brazilian states. Using real data from the Atlas of Violence (IPEA/FBSP) and the Brazilian Yearbook of Public Security, we developed a mathematical model that determines the optimal distribution of a supplementary budget to minimize the number of violent deaths. The model considers the crime-investment elasticity of each state, calculated by regression over 34 years of historical data (1989-2022). Results indicate that, with an additional investment of R\$ 5 billion distributed optimally, it would be possible to save approximately 1,875 lives per year. Furthermore, we identified that states such as São Paulo, Santa Catarina, and Minas Gerais show greater efficiency in resource use, while Bahia, Sergipe, and Amapá need management improvements. The work includes sensitivity analysis, Monte Carlo simulation, and validation through historical backtesting.\\[0.5cm]
+
+\noindent
+\textbf{Keywords:} Operations Research. Linear Programming. Public Security. Optimization. Simplex.
+
+% -----------------------------------------------------------------------------
+% SUMÁRIO (Elemento obrigatório - ABNT NBR 6027)
+% -----------------------------------------------------------------------------
 \newpage
+\begin{center}
+    \textbf{\MakeUppercase{Sumário}}
+\end{center}
+\vspace{0.5cm}
+\makeatletter
+\@starttoc{toc}
+\makeatother
 
 % =============================================================================
-% 1. INTRODUÇÃO
+% ELEMENTOS TEXTUAIS
 % =============================================================================
-\section{Introdução}
+\newpage
+\setcounter{page}{1}
+
+% =============================================================================
+% 1 INTRODUÇÃO
+% =============================================================================
+\section{INTRODUÇÃO}
 
 \subsection{Contexto e Motivação}
 
-O Brasil registrou mais de \textbf{47.000 mortes violentas intencionais} em 2022, segundo dados do Fórum Brasileiro de Segurança Pública. Este número, embora represente uma redução em relação aos anos anteriores, ainda coloca o país entre os mais violentos do mundo em termos absolutos.
+O Brasil registrou mais de 47.000 mortes violentas intencionais em 2022, segundo dados do Fórum Brasileiro de Segurança Pública. Este número, embora represente uma redução em relação aos anos anteriores, ainda coloca o país entre os mais violentos do mundo em termos absolutos.
 
 A distribuição de recursos de segurança pública entre os estados é uma questão complexa que envolve múltiplos fatores: tamanho da população, taxa de criminalidade, eficiência histórica das políticas implementadas e restrições orçamentárias. Tradicionalmente, essa alocação é feita com base em critérios políticos ou históricos, sem necessariamente otimizar o impacto na redução da violência.
 
+A Pesquisa Operacional oferece ferramentas matemáticas que podem auxiliar gestores públicos a tomar decisões mais eficientes e fundamentadas em dados, maximizando o impacto social de recursos limitados.
+
 \subsection{Objetivo}
 
-Este trabalho tem como objetivo principal:
-
-\begin{quote}
-\textbf{Determinar a alocação ótima de um orçamento suplementar de segurança pública entre os estados brasileiros, de forma a minimizar o número total de mortes violentas.}
-\end{quote}
+Este trabalho tem como objetivo principal determinar a alocação ótima de um orçamento suplementar de segurança pública entre os estados brasileiros, de forma a minimizar o número total de mortes violentas.
 
 Como objetivos secundários, buscamos:
+
 \begin{itemize}
-    \item Identificar quais estados utilizam seus recursos de forma mais eficiente
-    \item Calcular a elasticidade crime-investimento para cada estado
-    \item Quantificar a incerteza do modelo via simulação Monte Carlo
-    \item Validar o modelo com dados históricos (backtesting)
+    \setlength{\itemsep}{0pt}
+    \item Identificar quais estados utilizam seus recursos de forma mais eficiente;
+    \item Calcular a elasticidade crime-investimento para cada estado;
+    \item Quantificar a incerteza do modelo via simulação Monte Carlo;
+    \item Validar o modelo com dados históricos (backtesting).
 \end{itemize}
 
 \subsection{Estrutura do Trabalho}
@@ -117,13 +237,15 @@ Como objetivos secundários, buscamos:
 O trabalho está organizado da seguinte forma: a Seção 2 apresenta a fundamentação teórica de Pesquisa Operacional e Programação Linear; a Seção 3 descreve a metodologia e os dados utilizados; a Seção 4 formula o modelo matemático; a Seção 5 apresenta os resultados e análises; e a Seção 6 traz as conclusões.
 
 % =============================================================================
-% 2. FUNDAMENTAÇÃO TEÓRICA
+% 2 FUNDAMENTAÇÃO TEÓRICA
 % =============================================================================
-\section{Fundamentação Teórica}
+\section{FUNDAMENTAÇÃO TEÓRICA}
 
 \subsection{Pesquisa Operacional}
 
-A Pesquisa Operacional (PO) é uma área da matemática aplicada que utiliza métodos científicos para auxiliar na tomada de decisões. Surgida durante a Segunda Guerra Mundial para otimizar operações militares, a PO hoje é amplamente aplicada em logística, finanças, produção e, como neste trabalho, em políticas públicas.
+A Pesquisa Operacional (PO) é uma área da matemática aplicada que utiliza métodos científicos para auxiliar na tomada de decisões. Surgida durante a Segunda Guerra Mundial para otimizar operações militares, a PO hoje é amplamente aplicada em logística, finanças, produção e, como neste trabalho, em políticas públicas (HILLIER; LIEBERMAN, 2015).
+
+Segundo Winston (2003), as principais etapas de um estudo de PO são: (1) definição do problema; (2) construção do modelo matemático; (3) obtenção de dados; (4) resolução do modelo; (5) validação; e (6) implementação.
 
 \subsection{Programação Linear}
 
@@ -137,74 +259,63 @@ A Programação Linear (PL) é uma técnica de otimização que busca maximizar 
 \end{aligned}
 \end{equation}
 
-Onde $\mathbf{c}$ é o vetor de coeficientes da função objetivo, $\mathbf{x}$ é o vetor de variáveis de decisão, $\mathbf{A}$ é a matriz de coeficientes das restrições e $\mathbf{b}$ é o vetor de termos independentes.
+Onde $\mathbf{c}$ é o vetor de coeficientes da função objetivo, $\mathbf{x}$ é o vetor de variáveis de decisão, $\mathbf{A}$ é a matriz de coeficientes das restrições e $\mathbf{b}$ é o vetor de termos independentes (TAHA, 2017).
 
 \subsection{Método Simplex}
 
-O método Simplex, desenvolvido por George Dantzig em 1947, é o algoritmo mais utilizado para resolver problemas de Programação Linear. O algoritmo percorre os vértices da região viável, movendo-se sempre para vértices adjacentes que melhorem o valor da função objetivo, até encontrar o ótimo.
+O método Simplex, desenvolvido por George Dantzig em 1947, é o algoritmo mais utilizado para resolver problemas de Programação Linear. O algoritmo percorre os vértices da região viável, movendo-se sempre para vértices adjacentes que melhorem o valor da função objetivo, até encontrar o ótimo (WINSTON, 2003).
 
 \subsection{Análise de Sensibilidade}
 
 A análise de sensibilidade avalia como variações nos parâmetros do modelo afetam a solução ótima. Os principais conceitos são:
 
 \begin{itemize}
-    \item \textbf{Shadow Price (Preço Sombra):} Indica quanto a função objetivo melhoraria se uma restrição fosse relaxada em uma unidade.
+    \setlength{\itemsep}{0pt}
+    \item \textbf{Shadow Price (Preço Sombra):} Indica quanto a função objetivo melhoraria se uma restrição fosse relaxada em uma unidade;
     \item \textbf{Intervalo de Otimalidade:} Faixa de valores que um coeficiente pode assumir sem alterar a base ótima.
 \end{itemize}
 
 \subsection{Simulação Monte Carlo}
 
-A simulação Monte Carlo é uma técnica que utiliza amostragem aleatória para obter resultados numéricos. É especialmente útil quando:
-\begin{itemize}
-    \item Os parâmetros do modelo são incertos
-    \item Deseja-se obter intervalos de confiança para os resultados
-    \item O problema é muito complexo para solução analítica
-\end{itemize}
+A simulação Monte Carlo é uma técnica que utiliza amostragem aleatória para obter resultados numéricos. É especialmente útil quando os parâmetros do modelo são incertos, quando se deseja obter intervalos de confiança para os resultados, ou quando o problema é muito complexo para solução analítica (RUBINSTEIN; KROESE, 2016).
 
 % =============================================================================
-% 3. METODOLOGIA E DADOS
+% 3 METODOLOGIA E DADOS
 % =============================================================================
-\section{Metodologia e Dados}
+\section{METODOLOGIA E DADOS}
 
 \subsection{Fontes de Dados}
 
-Os dados utilizados neste trabalho provêm de fontes oficiais brasileiras:
+Os dados utilizados neste trabalho provêm de fontes oficiais brasileiras, conforme apresentado no Quadro 1.
 
 \begin{table}[H]
 \centering
 \caption{Fontes de dados utilizadas}
-\label{tab:fontes}
+\label{quadro:fontes}
 \begin{tabularx}{\textwidth}{lXll}
 \toprule
 \textbf{Fonte} & \textbf{Dados} & \textbf{Período} & \textbf{Acesso} \\
 \midrule
-Atlas da Violência (IPEA/FBSP) & Taxa de homicídios por UF & 1989-2022 & ipea.gov.br \\
+Atlas da Violência & Taxa de homicídios por UF & 1989-2022 & ipea.gov.br \\
 Anuário FBSP 2023 & Orçamento de segurança por UF & 2021-2022 & forumseguranca.org.br \\
 IBGE & População por UF & 2022 & ibge.gov.br \\
 SICONFI & Execução orçamentária & 2022 & siconfi.tesouro.gov.br \\
 \bottomrule
 \end{tabularx}
+\footnotesize{Fonte: Elaboração própria (2026).}
 \end{table}
 
 \subsection{Dados de Violência}
 
-Os dados de mortes violentas intencionais (MVI) seguem a metodologia do Fórum Brasileiro de Segurança Pública, que inclui:
-\begin{itemize}
-    \item Homicídios dolosos
-    \item Latrocínios (roubo seguido de morte)
-    \item Lesões corporais seguidas de morte
-    \item Mortes decorrentes de intervenção policial
-\end{itemize}
-
-A fonte primária é o Sistema de Informação sobre Mortalidade (SIM) do DATASUS.
+Os dados de mortes violentas intencionais (MVI) seguem a metodologia do Fórum Brasileiro de Segurança Pública, que inclui: homicídios dolosos, latrocínios (roubo seguido de morte), lesões corporais seguidas de morte e mortes decorrentes de intervenção policial. A fonte primária é o Sistema de Informação sobre Mortalidade (SIM) do DATASUS (IPEA, 2023).
 
 \subsection{Dados de Orçamento}
 
-Os dados de orçamento foram extraídos da \textbf{Tabela 54 do Anuário Brasileiro de Segurança Pública 2023}, que consolida as ``Despesas realizadas com a Função Segurança Pública'' por estado. A fonte primária é o SICONFI (Sistema de Informações Contábeis e Fiscais do Setor Público Brasileiro).
+Os dados de orçamento foram extraídos da Tabela 54 do Anuário Brasileiro de Segurança Pública 2023, que consolida as ``Despesas realizadas com a Função Segurança Pública'' por estado. A fonte primária é o SICONFI (Sistema de Informações Contábeis e Fiscais do Setor Público Brasileiro) (FBSP, 2023).
 
-\textbf{O que está incluído:} Polícia Civil, Polícia Militar, Corpo de Bombeiros, Defesa Civil e administração de segurança.
+O que está incluído: Polícia Civil, Polícia Militar, Corpo de Bombeiros, Defesa Civil e administração de segurança.
 
-\textbf{Limitação:} O estado de Tocantins não apresentava dados na tabela original. Utilizamos a média da região Norte como estimativa.
+Limitação: O estado de Tocantins não apresentava dados na tabela original. Utilizamos a média da região Norte como estimativa.
 
 \subsection{Cálculo da Elasticidade}
 
@@ -214,12 +325,12 @@ A elasticidade crime-investimento ($\varepsilon_i$) mede a sensibilidade da taxa
 \Delta \text{Crime}_t = \alpha + \varepsilon \cdot \Delta \text{Investimento}_t + \epsilon_t
 \end{equation}
 
-Como não dispomos de série histórica longa de orçamento, utilizamos a variação histórica da taxa de homicídios (1989-2022) como proxy da eficiência de cada estado em reduzir a violência ao longo do tempo.
+Como não dispomos de série histórica longa de orçamento, utilizamos a variação histórica da taxa de homicídios (1989-2022) como proxy da eficiência de cada estado em reduzir a violência ao longo do tempo (CERQUEIRA; LOBÃO, 2004).
 
 % =============================================================================
-% 4. MODELO MATEMÁTICO
+% 4 MODELO MATEMÁTICO
 % =============================================================================
-\section{Modelo Matemático}
+\section{MODELO MATEMÁTICO}
 
 \subsection{Definição do Problema}
 
@@ -234,6 +345,7 @@ x_i = \text{Investimento adicional no estado } i \text{ (R\$ milhões)}, \quad i
 \subsection{Parâmetros}
 
 \begin{itemize}
+    \setlength{\itemsep}{0pt}
     \item $C_i$: Número de mortes violentas atuais no estado $i$
     \item $O_i$: Orçamento atual de segurança do estado $i$ (R\$ milhões)
     \item $\varepsilon_i$: Elasticidade crime-investimento do estado $i$
@@ -256,19 +368,19 @@ A lógica é que um investimento $x_i$ no estado $i$ reduz as mortes proporciona
 
 \subsection{Restrições}
 
-\textbf{1. Restrição de orçamento total:}
+\textbf{Restrição de orçamento total:}
 \begin{equation}
 \sum_{i=1}^{27} x_i \leq B
 \end{equation}
 
-\textbf{2. Limites por estado (evita concentração excessiva):}
+\textbf{Limites por estado (evita concentração excessiva):}
 \begin{equation}
 L_i \leq x_i \leq U_i, \quad \forall i
 \end{equation}
 
 Onde $L_i = 0$ (ou um percentual mínimo do orçamento atual) e $U_i = 0.30 \cdot O_i$ (limite de 30\% do orçamento atual).
 
-\textbf{3. Não-negatividade:}
+\textbf{Não-negatividade:}
 \begin{equation}
 x_i \geq 0, \quad \forall i
 \end{equation}
@@ -291,38 +403,40 @@ Esta é uma função linear em $x_i$, portanto temos um problema de Programaçã
 
 \subsection{Implementação}
 
-O modelo foi implementado em Python utilizando a biblioteca \textbf{PuLP} com o solver \textbf{CBC (Coin-or Branch and Cut)}, que é open-source e eficiente para problemas de médio porte.
+O modelo foi implementado em Python utilizando a biblioteca PuLP com o solver CBC (Coin-or Branch and Cut), que é open-source e eficiente para problemas de médio porte.
 
 % =============================================================================
-% 5. RESULTADOS E ANÁLISES
+% 5 RESULTADOS E ANÁLISES
 % =============================================================================
-\section{Resultados e Análises}
+\section{RESULTADOS E ANÁLISES}
 
 \subsection{Panorama da Situação Atual}
 
-A Figura \ref{fig:ranking} apresenta o ranking dos estados brasileiros por taxa de mortes violentas por 100 mil habitantes em 2022.
+A Figura 1 apresenta o ranking dos estados brasileiros por taxa de mortes violentas por 100 mil habitantes em 2022.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{fig1_ranking_violencia.pdf}
+    \includegraphics[width=0.85\textwidth]{fig1_ranking_violencia.pdf}
     \caption{Taxa de mortes violentas por 100 mil habitantes (2022)}
     \label{fig:ranking}
+    \footnotesize{Fonte: Elaboração própria com dados do Atlas da Violência (2026).}
 \end{figure}
 
 Observa-se que os estados do Nordeste (BA, SE, PE, CE, AL) concentram as maiores taxas, enquanto estados do Sul e Sudeste (SP, SC, MG) apresentam as menores.
 
 \subsection{Relação entre Gasto e Violência}
 
-A Figura \ref{fig:gasto_violencia} mostra a relação entre gasto per capita em segurança e taxa de violência.
+A Figura 2 mostra a relação entre gasto per capita em segurança e taxa de violência.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{fig2_gasto_vs_violencia.pdf}
+    \includegraphics[width=0.85\textwidth]{fig2_gasto_vs_violencia.pdf}
     \caption{Relação entre gasto per capita e taxa de violência}
     \label{fig:gasto_violencia}
+    \footnotesize{Fonte: Elaboração própria com dados do FBSP e Atlas da Violência (2026).}
 \end{figure}
 
-Nota-se que \textbf{não há correlação linear simples} entre gasto e resultado. Estados como São Paulo conseguem baixa violência com gasto moderado, enquanto estados como Amapá têm alta violência apesar de gasto per capita semelhante. Isso evidencia a importância da \textbf{eficiência} na aplicação dos recursos.
+Nota-se que não há correlação linear simples entre gasto e resultado. Estados como São Paulo conseguem baixa violência com gasto moderado, enquanto estados como Amapá têm alta violência apesar de gasto per capita semelhante. Isso evidencia a importância da eficiência na aplicação dos recursos.
 
 \subsection{Análise de Eficiência}
 
@@ -336,38 +450,24 @@ Valores acima de 1 indicam eficiência acima da média; abaixo de 1, abaixo da m
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{fig3_eficiencia.pdf}
+    \includegraphics[width=0.85\textwidth]{fig3_eficiencia.pdf}
     \caption{Índice de eficiência por estado}
     \label{fig:eficiencia}
+    \footnotesize{Fonte: Elaboração própria (2026).}
 \end{figure}
 
-\textbf{Estados mais eficientes:}
-\begin{enumerate}
-    \item São Paulo (SP) - Índice: 2.41
-    \item Santa Catarina (SC) - Índice: 2.03
-    \item Minas Gerais (MG) - Índice: 1.24
-    \item Distrito Federal (DF) - Índice: 1.12
-    \item Rio Grande do Sul (RS) - Índice: 1.02
-\end{enumerate}
-
-\textbf{Estados menos eficientes:}
-\begin{enumerate}
-    \item Bahia (BA) - Índice: 0.31
-    \item Sergipe (SE) - Índice: 0.38
-    \item Amapá (AP) - Índice: 0.30
-    \item Pernambuco (PE) - Índice: 0.41
-    \item Ceará (CE) - Índice: 0.33
-\end{enumerate}
+Os cinco estados mais eficientes são: São Paulo (2,41), Santa Catarina (2,03), Minas Gerais (1,24), Distrito Federal (1,12) e Rio Grande do Sul (1,02). Os cinco menos eficientes são: Amapá (0,30), Bahia (0,31), Ceará (0,33), Sergipe (0,38) e Pernambuco (0,41).
 
 \subsection{Resultado da Otimização}
 
-Executamos o modelo com orçamento suplementar de R\$ 5 bilhões. A Figura \ref{fig:otimizacao} compara o cenário atual com o cenário otimizado.
+Executamos o modelo com orçamento suplementar de R\$ 5 bilhões. A Figura 4 compara o cenário atual com o cenário otimizado.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.95\textwidth]{fig4_otimizacao.pdf}
+    \includegraphics[width=0.9\textwidth]{fig4_otimizacao.pdf}
     \caption{Comparativo antes vs. depois da otimização}
     \label{fig:otimizacao}
+    \footnotesize{Fonte: Elaboração própria (2026).}
 \end{figure}
 
 \begin{table}[H]
@@ -380,47 +480,46 @@ Executamos o modelo com orçamento suplementar de R\$ 5 bilhões. A Figura \ref{
 \midrule
 Mortes antes & 47.382 \\
 Mortes depois (projeção) & 45.507 \\
-\textbf{Vidas salvas} & \textbf{1.875} \\
+Vidas salvas & 1.875 \\
 Redução percentual & 3,96\% \\
 Custo médio por vida & R\$ 2,67 milhões \\
 \bottomrule
 \end{tabular}
+
+\footnotesize{Fonte: Elaboração própria (2026).}
 \end{table}
 
 \subsection{Alocação Ótima}
 
-A Figura \ref{fig:alocacao} mostra quanto cada estado deve receber segundo o modelo.
+A Figura 5 mostra quanto cada estado deve receber segundo o modelo.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{fig5_alocacao_otima.pdf}
+    \includegraphics[width=0.85\textwidth]{fig5_alocacao_otima.pdf}
     \caption{Alocação ótima de recursos por estado}
     \label{fig:alocacao}
+    \footnotesize{Fonte: Elaboração própria (2026).}
 \end{figure}
 
-Os estados que mais recebem são aqueles com:
-\begin{itemize}
-    \item Alta elasticidade (respondem bem a investimentos)
-    \item Alto número absoluto de mortes (maior potencial de impacto)
-    \item Margem para aumento (orçamento atual não está no limite)
-\end{itemize}
+Os estados que mais recebem são aqueles com alta elasticidade (respondem bem a investimentos), alto número absoluto de mortes (maior potencial de impacto) e margem para aumento (orçamento atual não está no limite).
 
 \subsection{Análise de Sensibilidade}
 
-A Figura \ref{fig:sensibilidade} mostra como o resultado varia com diferentes orçamentos.
+A Figura 6 mostra como o resultado varia com diferentes orçamentos.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\textwidth]{fig8_sensibilidade.pdf}
+    \includegraphics[width=0.8\textwidth]{fig8_sensibilidade.pdf}
     \caption{Sensibilidade do resultado ao orçamento}
     \label{fig:sensibilidade}
+    \footnotesize{Fonte: Elaboração própria (2026).}
 \end{figure}
 
-O \textbf{shadow price} do orçamento é aproximadamente 0.37 vidas/R\$ milhão, indicando que cada R\$ 1 milhão adicional salva, em média, 0.37 vidas.
+O shadow price do orçamento é aproximadamente 0,37 vidas/R\$ milhão, indicando que cada R\$ 1 milhão adicional salva, em média, 0,37 vidas.
 
 \subsection{Simulação Monte Carlo}
 
-Executamos 500 simulações variando os parâmetros em $\pm$15\% para quantificar a incerteza:
+Executamos 500 simulações variando os parâmetros em $\pm$15\% para quantificar a incerteza.
 
 \begin{table}[H]
 \centering
@@ -434,9 +533,11 @@ Média & 1.875 \\
 Mediana & 1.862 \\
 Percentil 5\% (VaR) & 1.604 \\
 Percentil 95\% & 2.452 \\
-\textbf{Intervalo de Confiança 95\%} & \textbf{[1.604 - 2.452]} \\
+Intervalo de Confiança 95\% & [1.604 - 2.452] \\
 \bottomrule
 \end{tabular}
+
+\footnotesize{Fonte: Elaboração própria (2026).}
 \end{table}
 
 Isso significa que, com 95\% de confiança, o investimento de R\$ 5 bilhões salvaria entre 1.604 e 2.452 vidas.
@@ -446,95 +547,116 @@ Isso significa que, com 95\% de confiança, o investimento de R\$ 5 bilhões sal
 Testamos o modelo usando dados de 2010-2017 para prever 2018-2022:
 
 \begin{itemize}
-    \item \textbf{MAPE (Mean Absolute Percentage Error):} 17.8\%
-    \item \textbf{RMSE:} 2.340 mortes
-    \item \textbf{Correlação previsto/real:} 0.82
+    \setlength{\itemsep}{0pt}
+    \item MAPE (Mean Absolute Percentage Error): 17,8\%
+    \item RMSE: 2.340 mortes
+    \item Correlação previsto/real: 0,82
 \end{itemize}
 
 Esses valores indicam que o modelo tem capacidade preditiva razoável, embora deva ser recalibrado periodicamente.
 
 % =============================================================================
-% 6. CONCLUSÕES
+% 6 CONCLUSÕES
 % =============================================================================
-\section{Conclusões}
+\section{CONCLUSÕES}
 
 \subsection{Principais Achados}
 
-\begin{enumerate}
-    \item \textbf{Eficiência varia significativamente:} Estados como São Paulo (índice 2.41) são quase 8 vezes mais eficientes que Amapá (índice 0.30) no uso de recursos de segurança.
-    
-    \item \textbf{Otimização gera impacto:} Uma distribuição otimizada de R\$ 5 bilhões poderia salvar aproximadamente 1.875 vidas por ano.
-    
-    \item \textbf{Gasto não garante resultado:} Não há correlação simples entre volume de investimento e redução de violência. A qualidade da gestão é determinante.
-    
-    \item \textbf{Priorização importa:} Estados com alta elasticidade e alto volume de mortes (BA, PE, CE) devem ser priorizados para maximizar o impacto.
-\end{enumerate}
+Os resultados deste trabalho permitem as seguintes conclusões:
+
+Primeiro, a eficiência no uso de recursos de segurança varia significativamente entre os estados brasileiros. Estados como São Paulo (índice 2,41) são quase oito vezes mais eficientes que Amapá (índice 0,30) no uso de recursos de segurança.
+
+Segundo, a otimização gera impacto significativo. Uma distribuição otimizada de R\$ 5 bilhões poderia salvar aproximadamente 1.875 vidas por ano.
+
+Terceiro, gasto não garante resultado. Não há correlação simples entre volume de investimento e redução de violência. A qualidade da gestão é determinante.
+
+Quarto, a priorização importa. Estados com alta elasticidade e alto volume de mortes (BA, PE, CE) devem ser priorizados para maximizar o impacto.
 
 \subsection{Recomendações}
 
+Com base nos resultados, recomenda-se:
+
 \begin{enumerate}
-    \item \textbf{Priorizar por elasticidade:} Direcionar recursos para estados que historicamente respondem melhor a investimentos.
-    
-    \item \textbf{Limitar concentração:} A restrição de investimento máximo (30\% do orçamento atual) evita distorções.
-    
-    \item \textbf{Investir cedo:} Análise multi-período mostra que estratégia ``frontloaded'' (mais investimento no início) gera resultados 4\% superiores.
-    
-    \item \textbf{Melhorar gestão:} Estados com baixa eficiência precisam de reformas na gestão, não apenas mais recursos.
-    
-    \item \textbf{Monitorar e recalibrar:} O modelo deve ser atualizado anualmente com novos dados.
+    \setlength{\itemsep}{0pt}
+    \item Priorizar alocação por elasticidade, direcionando recursos para estados que historicamente respondem melhor a investimentos;
+    \item Limitar concentração de recursos em um único estado (máximo de 30\% do orçamento atual);
+    \item Investir cedo, pois análise multi-período mostra que estratégia com mais investimento no início gera resultados 4\% superiores;
+    \item Investir em melhoria da gestão nos estados com baixa eficiência;
+    \item Monitorar e recalibrar o modelo anualmente com novos dados.
 \end{enumerate}
 
 \subsection{Limitações}
 
+Este trabalho apresenta as seguintes limitações:
+
 \begin{itemize}
-    \item A elasticidade é uma simplificação; a relação real entre gasto e crime é multifatorial
-    \item Dados de orçamento disponíveis apenas para 2021-2022
-    \item O modelo assume linearidade, que pode não valer para investimentos muito grandes
-    \item Tocantins estimado pela média regional
+    \setlength{\itemsep}{0pt}
+    \item A elasticidade é uma simplificação; a relação real entre gasto e crime é multifatorial;
+    \item Dados de orçamento disponíveis apenas para 2021-2022;
+    \item O modelo assume linearidade, que pode não valer para investimentos muito grandes;
+    \item Tocantins estimado pela média regional.
 \end{itemize}
 
 \subsection{Trabalhos Futuros}
 
+Sugere-se para trabalhos futuros:
+
 \begin{itemize}
-    \item Incorporar variáveis socioeconômicas (desemprego, educação, desigualdade)
-    \item Modelar retornos decrescentes (não-linearidade)
-    \item Expandir para nível municipal
-    \item Considerar diferentes tipos de crime separadamente
+    \setlength{\itemsep}{0pt}
+    \item Incorporar variáveis socioeconômicas (desemprego, educação, desigualdade);
+    \item Modelar retornos decrescentes (não-linearidade);
+    \item Expandir análise para nível municipal;
+    \item Considerar diferentes tipos de crime separadamente.
 \end{itemize}
 
 % =============================================================================
-% REFERÊNCIAS
+% ELEMENTOS PÓS-TEXTUAIS
 % =============================================================================
-\newpage
-\section*{Referências}
-\addcontentsline{toc}{section}{Referências}
 
-\begin{enumerate}
-    \item WINSTON, W. L. \textbf{Operations Research: Applications and Algorithms}. 4th ed. Duxbury Press, 2003.
-    
-    \item HILLIER, F. S.; LIEBERMAN, G. J. \textbf{Introduction to Operations Research}. 10th ed. McGraw-Hill, 2015.
-    
-    \item TAHA, H. A. \textbf{Operations Research: An Introduction}. 10th ed. Pearson, 2017.
-    
-    \item RUBINSTEIN, R. Y.; KROESE, D. P. \textbf{Simulation and the Monte Carlo Method}. 3rd ed. Wiley, 2016.
-    
-    \item BECKER, G. S. Crime and Punishment: An Economic Approach. \textbf{Journal of Political Economy}, v. 76, n. 2, 1968.
-    
-    \item CERQUEIRA, D.; LOBÃO, W. Determinantes da criminalidade: arcabouços teóricos e resultados empíricos. \textbf{Dados}, v. 47, n. 2, 2004.
-    
-    \item IPEA/FBSP. \textbf{Atlas da Violência 2023}. Brasília, 2023. Disponível em: \url{https://www.ipea.gov.br/atlasviolencia/}
-    
-    \item FBSP. \textbf{Anuário Brasileiro de Segurança Pública 2023}. São Paulo, 2023. Disponível em: \url{https://forumseguranca.org.br/}
-    
-    \item IBGE. \textbf{Projeções da População}. 2022. Disponível em: \url{https://www.ibge.gov.br/}
-\end{enumerate}
-
-% =============================================================================
-% APÊNDICES
-% =============================================================================
+% -----------------------------------------------------------------------------
+% REFERÊNCIAS (ABNT NBR 6023)
+% -----------------------------------------------------------------------------
 \newpage
-\appendix
-\section{Dados Utilizados}
+\begin{center}
+    \textbf{\MakeUppercase{Referências}}
+\end{center}
+\addcontentsline{toc}{section}{REFERÊNCIAS}
+
+\noindent
+BECKER, G. S. Crime and Punishment: An Economic Approach. \textbf{Journal of Political Economy}, v. 76, n. 2, p. 169-217, 1968.\\[0.3cm]
+
+\noindent
+CERQUEIRA, D.; LOBÃO, W. Determinantes da criminalidade: arcabouços teóricos e resultados empíricos. \textbf{Dados}, Rio de Janeiro, v. 47, n. 2, p. 233-269, 2004.\\[0.3cm]
+
+\noindent
+FBSP. \textbf{Anuário Brasileiro de Segurança Pública 2023}. São Paulo: Fórum Brasileiro de Segurança Pública, 2023. Disponível em: https://forumseguranca.org.br/. Acesso em: 30 jan. 2026.\\[0.3cm]
+
+\noindent
+HILLIER, F. S.; LIEBERMAN, G. J. \textbf{Introduction to Operations Research}. 10. ed. New York: McGraw-Hill, 2015.\\[0.3cm]
+
+\noindent
+IBGE. \textbf{Projeções da População do Brasil e Unidades da Federação}. Rio de Janeiro: IBGE, 2022. Disponível em: https://www.ibge.gov.br/. Acesso em: 30 jan. 2026.\\[0.3cm]
+
+\noindent
+IPEA. \textbf{Atlas da Violência 2023}. Brasília: Instituto de Pesquisa Econômica Aplicada, 2023. Disponível em: https://www.ipea.gov.br/atlasviolencia/. Acesso em: 30 jan. 2026.\\[0.3cm]
+
+\noindent
+RUBINSTEIN, R. Y.; KROESE, D. P. \textbf{Simulation and the Monte Carlo Method}. 3. ed. Hoboken: Wiley, 2016.\\[0.3cm]
+
+\noindent
+TAHA, H. A. \textbf{Operations Research: An Introduction}. 10. ed. London: Pearson, 2017.\\[0.3cm]
+
+\noindent
+WINSTON, W. L. \textbf{Operations Research: Applications and Algorithms}. 4. ed. Pacific Grove: Duxbury Press, 2003.\\[0.3cm]
+
+% -----------------------------------------------------------------------------
+% APÊNDICE A (ABNT NBR 14724)
+% -----------------------------------------------------------------------------
+\newpage
+\begin{center}
+    \textbf{APÊNDICE A -- Dados Utilizados}
+\end{center}
+\addcontentsline{toc}{section}{APÊNDICE A -- Dados Utilizados}
 
 \begin{table}[H]
 \centering
@@ -553,11 +675,20 @@ BA & 13.648 & 14.141.626 & 96,5 & 4.028 & 285 \\
 ... & ... & ... & ... & ... & ... \\
 \bottomrule
 \end{tabular}
+
+\footnotesize{Fonte: Atlas da Violência e Anuário FBSP 2023.}
 \end{table}
 
-\textit{Nota: Tabela completa disponível no repositório do projeto.}
+Nota: Tabela completa disponível no repositório do projeto.
 
-\section{Código-Fonte}
+% -----------------------------------------------------------------------------
+% APÊNDICE B
+% -----------------------------------------------------------------------------
+\newpage
+\begin{center}
+    \textbf{APÊNDICE B -- Código-Fonte e Aplicação Web}
+\end{center}
+\addcontentsline{toc}{section}{APÊNDICE B -- Código-Fonte e Aplicação Web}
 
 O código-fonte completo está disponível em:
 
@@ -571,8 +702,9 @@ A aplicação web interativa pode ser acessada em:
 \url{http://po-atlasviolencia.duckdns.org}
 \end{center}
 
-\textbf{Credenciais de acesso:}
+Credenciais de acesso:
 \begin{itemize}
+    \setlength{\itemsep}{0pt}
     \item Usuário: admin
     \item Senha: Atlasviolencia123@
 \end{itemize}
