@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # =============================================================================
 # APLICAÇÃO STREAMLIT - OTIMIZAÇÃO DE RECURSOS DE SEGURANÇA PÚBLICA
 # =============================================================================
@@ -1655,7 +1656,6 @@ def render_conclusoes(df: pd.DataFrame):
     - Alta elasticidade (respondem bem a investimentos)
     - Alto número absoluto de mortes (maior potencial de impacto)
     - Baixo gasto per capita atual (margem para crescimento)
-    """)
     """)
     
     st.markdown("---")
