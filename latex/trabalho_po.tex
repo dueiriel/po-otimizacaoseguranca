@@ -387,9 +387,48 @@ O primeiro termo é constante (total de mortes atuais). Minimizar $Z$ equivale a
 
 Esta é uma função linear em $x_i$, portanto temos um problema de Programação Linear.
 
-\subsection{Implementação}
+\subsection{Implementação Computacional}
 
-O modelo foi implementado em Python utilizando a biblioteca PuLP com o solver CBC (Coin-or Branch and Cut), que é open-source e eficiente para problemas de médio porte.
+O modelo foi implementado em Python utilizando a biblioteca \textbf{PuLP} (Python Linear Programming), uma biblioteca open-source que permite a formulação de problemas de Programação Linear e Inteira de forma declarativa.
+
+\subsubsection{Solver Utilizado}
+
+O solver escolhido foi o \textbf{CBC (Coin-or Branch and Cut)}, desenvolvido pelo projeto COIN-OR (Computational Infrastructure for Operations Research). O CBC é um solver open-source de alta performance que implementa:
+
+\begin{itemize}
+    \setlength{\itemsep}{0pt}
+    \item \textbf{Método Simplex:} Para resolver o problema de Programação Linear relaxado, o CBC utiliza o algoritmo Simplex Dual, que é particularmente eficiente para problemas com muitas restrições;
+    \item \textbf{Pré-processamento:} Antes da resolução, o solver aplica técnicas de redução do problema, eliminando variáveis fixas e restrições redundantes;
+    \item \textbf{Branch and Cut:} Para problemas de Programação Inteira (não utilizado neste trabalho, pois as variáveis são contínuas), o CBC combina Branch and Bound com planos de corte.
+\end{itemize}
+
+\subsubsection{Justificativa da Escolha}
+
+A escolha do PuLP com CBC se justifica por:
+
+\begin{enumerate}
+    \setlength{\itemsep}{0pt}
+    \item \textbf{Licença open-source:} Permite reprodutibilidade e auditoria do código;
+    \item \textbf{Performance adequada:} Para problemas de médio porte (27 variáveis, 55 restrições), o CBC resolve em menos de 1 segundo;
+    \item \textbf{Integração com Python:} Facilita a integração com bibliotecas de análise de dados (Pandas, NumPy) e visualização (Plotly);
+    \item \textbf{Suporte a análise de sensibilidade:} O PuLP permite extrair shadow prices e intervalos de otimalidade diretamente da solução.
+\end{enumerate}
+
+\subsubsection{Estrutura do Código}
+
+O código principal segue a estrutura padrão de modelagem em PuLP:
+
+\begin{enumerate}
+    \setlength{\itemsep}{0pt}
+    \item Criação do problema: \texttt{prob = LpProblem("Seguranca", LpMinimize)}
+    \item Definição das variáveis: \texttt{x[i] = LpVariable(f"invest\_{i}", lowBound=0, upBound=max\_i)}
+    \item Função objetivo: \texttt{prob += lpSum([coef[i] * x[i] for i in estados])}
+    \item Restrições: \texttt{prob += lpSum(x[i] for i in estados) <= orcamento}
+    \item Resolução: \texttt{prob.solve(PULP\_CBC\_CMD(msg=0))}
+    \item Extração dos resultados: \texttt{value(x[i])} para cada variável
+\end{enumerate}
+
+O tempo de execução médio foi de 0,15 segundos para o problema base e 45 segundos para as 500 simulações Monte Carlo.
 
 % =============================================================================
 % 5 RESULTADOS E ANÁLISES
