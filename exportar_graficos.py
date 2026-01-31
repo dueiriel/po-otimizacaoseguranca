@@ -307,8 +307,8 @@ def main():
     fig3_eficiencia(df)
     resultado = fig4_otimizacao(df)
     fig5_alocacao_otima(df, resultado)
-    fig6_elasticidade(df)
-    fig7_regiao(df)
+    # fig6_elasticidade(df)  # Removido - não utilizado
+    # fig7_regiao(df)  # Removido - não utilizado
     fig8_sensibilidade()
     
     print("="*60)
