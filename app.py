@@ -264,9 +264,8 @@ def render_sidebar():
     st.sidebar.markdown("---")
     st.sidebar.markdown("""
     **📖 Fontes dos Dados:**
-    - [Atlas da Violência](https://www.ipea.gov.br/atlasviolencia/) (IPEA)
-    - [Anuário de Segurança Pública](https://forumseguranca.org.br/) (FBSP)
-    - [SICONFI](https://siconfi.tesouro.gov.br/) (Gastos)
+    - [Anuário Brasileiro de Segurança Pública](https://forumseguranca.org.br/) (FBSP) - 2013-2023
+    - [SICONFI](https://siconfi.tesouro.gov.br/) (Gastos Estaduais)
     """)
     
     return ano_selecionado
@@ -282,8 +281,8 @@ def render_dashboard(df: pd.DataFrame, geojson, ano: int):
         ### O que é o Dashboard?
         
         Esta aba apresenta uma **visão geral da situação** de segurança pública no Brasil,
-        utilizando dados consolidados do **Atlas da Violência (IPEA)** e do **Anuário de Segurança 
-        Pública (FBSP)** referentes ao ano de **{ano}**.
+        utilizando dados consolidados do **Anuário Brasileiro de Segurança Pública (FBSP)** 
+        referentes ao ano de **{ano}**.
         
         #### Dados exibidos:
         - **Mortes Violentas**: Número absoluto de homicídios e mortes violentas intencionais
@@ -298,8 +297,8 @@ def render_dashboard(df: pd.DataFrame, geojson, ano: int):
         - **Por região**: Agrupamento dos estados por região geográfica
         
         #### Fonte dos dados:
-        - Atlas da Violência: Série histórica 2013-2023 (IPEA/FBSP)
-        - Anuário Brasileiro de Segurança Pública (FBSP)
+        - Anuário Brasileiro de Segurança Pública (FBSP) - Série 2013-2023
+        - SICONFI/Tesouro Nacional (Gastos com Segurança Pública)
         """)
     
     st.markdown(f"Visualização dos dados de violência e orçamento de segurança pública por estado ({ano}).")
@@ -1665,9 +1664,9 @@ def render_conclusoes(df: pd.DataFrame, ano: int = 2022):
         | **Eficiência DEA** | Resultado ÷ Custo (relativo) | Desempenho vs. outros estados |
         
         #### Fontes de dados:
-        - **Violência**: Atlas da Violência (IPEA/FBSP) - série 1989-2022
-        - **Orçamentos**: Anuário Brasileiro de Segurança Pública 2023 (FBSP)
-        - **População**: IBGE - Censo/Estimativas 2022
+        - **Violência**: Anuário Brasileiro de Segurança Pública (FBSP) - série 2013-2023
+        - **Orçamentos**: SICONFI/Tesouro Nacional - série 2013-2023
+        - **População**: IBGE - Censo/Estimativas
         """)
     
     resultado = obter_otimizacao_padrao(df)
@@ -1915,8 +1914,7 @@ def main():
     <div style="text-align: center; color: #888; font-size: 0.9rem;">
         <p><strong>Trabalho Acadêmico - Pesquisa Operacional</strong></p>
         <p>
-            Dados: <a href="https://www.ipea.gov.br/atlasviolencia/" target="_blank">Atlas da Violência (IPEA)</a> | 
-            <a href="https://forumseguranca.org.br/anuario-brasileiro-seguranca-publica/" target="_blank">Anuário FBSP</a> | 
+            Dados: <a href="https://forumseguranca.org.br/anuario-brasileiro-seguranca-publica/" target="_blank">Anuário FBSP (2013-2023)</a> | 
             <a href="https://siconfi.tesouro.gov.br/" target="_blank">SICONFI</a>
         </p>
         <p>

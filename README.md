@@ -22,8 +22,7 @@ Trabalho acadêmico de **Pesquisa Operacional** que aplica **Programação Linea
 
 | Fonte | Dados | Período | Link Direto |
 |-------|-------|---------|-------------|
-| **Atlas da Violência (IPEA/FBSP)** | Taxa de homicídios por UF | 1989-2022 | [ipea.gov.br/atlasviolencia](https://www.ipea.gov.br/atlasviolencia/dados-series/40) |
-| **Anuário Brasileiro de Segurança Pública (FBSP)** | Mortes violentas por UF | 2021-2022 | [forumseguranca.org.br](https://forumseguranca.org.br/estatisticas/) |
+| **Anuário Brasileiro de Segurança Pública (FBSP)** | Mortes violentas intencionais por UF | 2013-2023 | [forumseguranca.org.br](https://forumseguranca.org.br/estatisticas/) |
 | **SICONFI/Tesouro Nacional** | Gastos com Segurança Pública (Função 06) | 2013-2023 | [siconfi.tesouro.gov.br](https://siconfi.tesouro.gov.br/) |
 
 ### Origem dos Dados de Investimento

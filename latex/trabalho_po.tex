@@ -167,7 +167,7 @@
 \end{center}
 
 \noindent
-Este trabalho aplica técnicas de Programação Linear para otimizar a alocação de recursos de segurança pública entre os 27 estados brasileiros. Utilizando dados reais do Atlas da Violência (IPEA/FBSP) e do Anuário Brasileiro de Segurança Pública, desenvolvemos um modelo matemático que determina a distribuição ótima de um orçamento suplementar visando minimizar o número de mortes violentas. O modelo considera a elasticidade crime-investimento de cada estado, calculada por regressão sobre 34 anos de dados históricos (1989-2022). Os resultados indicam que, com um investimento adicional de R\$ 5 bilhões distribuído de forma otimizada, seria possível salvar aproximadamente 1.875 vidas por ano. Além disso, identificamos que estados como São Paulo, Santa Catarina e Minas Gerais apresentam maior eficiência no uso de recursos, enquanto Bahia, Sergipe e Amapá necessitam de melhorias na gestão. O trabalho inclui análise de sensibilidade, simulação Monte Carlo e validação por backtesting histórico.\\[0.5cm]
+Este trabalho aplica técnicas de Programação Linear para otimizar a alocação de recursos de segurança pública entre os 27 estados brasileiros. Utilizando dados reais do Anuário Brasileiro de Segurança Pública (FBSP) no período de 2013-2023, desenvolvemos um modelo matemático que determina a distribuição ótima de um orçamento suplementar visando minimizar o número de mortes violentas. O modelo considera a elasticidade crime-investimento de cada estado, calculada por regressão sobre 11 anos de dados históricos (2013-2023). Os resultados indicam que, com um investimento adicional de R\$ 5 bilhões distribuído de forma otimizada, seria possível salvar aproximadamente 1.875 vidas por ano. Além disso, identificamos que estados como São Paulo, Santa Catarina e Minas Gerais apresentam maior eficiência no uso de recursos, enquanto Bahia, Sergipe e Amapá necessitam de melhorias na gestão. O trabalho inclui análise de sensibilidade, simulação Monte Carlo e validação por backtesting histórico.\\[0.5cm]
 
 \noindent
 \textbf{Palavras-chave:} Pesquisa Operacional. Programação Linear. Segurança Pública. Otimização. Simplex.
@@ -281,8 +281,7 @@ Os dados utilizados neste trabalho provêm de fontes oficiais brasileiras, confo
 \toprule
 \textbf{Fonte} & \textbf{Dados} & \textbf{Período} & \textbf{Acesso} \\
 \midrule
-Atlas da Violência & Taxa de homicídios por UF & 1989-2022 & ipea.gov.br \\
-Anuário FBSP 2023 & Mortes violentas por UF & 2021-2022 & forumseguranca.org.br \\
+Anuário FBSP & Mortes violentas intencionais por UF & 2013-2023 & forumseguranca.org.br \\
 SICONFI & Gastos com Segurança Pública & 2013-2023 & siconfi.tesouro.gov.br \\
 \bottomrule
 \end{tabularx}
@@ -291,7 +290,7 @@ SICONFI & Gastos com Segurança Pública & 2013-2023 & siconfi.tesouro.gov.br \\
 
 \subsection{Dados de Violência}
 
-Os dados de mortes violentas intencionais (MVI) seguem a metodologia do Fórum Brasileiro de Segurança Pública, que inclui: homicídios dolosos, latrocínios (roubo seguido de morte), lesões corporais seguidas de morte e mortes decorrentes de intervenção policial. A fonte primária é o Sistema de Informação sobre Mortalidade (SIM) do DATASUS (IPEA, 2023).
+Os dados de mortes violentas intencionais (MVI) seguem a metodologia do Fórum Brasileiro de Segurança Pública, que inclui: homicídios dolosos, latrocínios (roubo seguido de morte), lesões corporais seguidas de morte e mortes decorrentes de intervenção policial. A fonte primária é o Anuário Brasileiro de Segurança Pública (FBSP, 2023), com dados disponíveis para o período 2013-2023.
 
 \subsection{Dados de Orçamento}
 
@@ -440,9 +439,9 @@ A Figura 1 apresenta o ranking dos estados brasileiros por taxa de mortes violen
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.85\textwidth]{fig1_ranking_violencia.pdf}
-    \caption{Taxa de mortes violentas por 100 mil habitantes (2022)}
+    \caption{Taxa de mortes violentas por 100 mil habitantes (2023)}
     \label{fig:ranking}
-    \footnotesize{Fonte: Elaboração própria com dados do Atlas da Violência (2026).}
+    \footnotesize{Fonte: Elaboração própria com dados do Anuário FBSP (2026).}
 \end{figure}
 
 Observa-se que os estados do Nordeste (BA, SE, PE, CE, AL) concentram as maiores taxas, enquanto estados do Sul e Sudeste (SP, SC, MG) apresentam as menores.
@@ -456,7 +455,7 @@ A Figura 2 mostra a relação entre gasto per capita em segurança e taxa de vio
     \includegraphics[width=0.85\textwidth]{fig2_gasto_vs_violencia.pdf}
     \caption{Relação entre gasto per capita e taxa de violência}
     \label{fig:gasto_violencia}
-    \footnotesize{Fonte: Elaboração própria com dados do FBSP e Atlas da Violência (2026).}
+    \footnotesize{Fonte: Elaboração própria com dados do Anuário FBSP e SICONFI (2026).}
 \end{figure}
 
 Nota-se que não há correlação linear simples entre gasto e resultado. Estados como São Paulo conseguem baixa violência com gasto moderado, enquanto estados como Amapá têm alta violência apesar de gasto per capita semelhante. Isso evidencia a importância da eficiência na aplicação dos recursos.
@@ -667,10 +666,13 @@ FBSP. \textbf{Anuário Brasileiro de Segurança Pública 2023}. São Paulo: Fór
 HILLIER, F. S.; LIEBERMAN, G. J. \textbf{Introduction to Operations Research}. 10. ed. New York: McGraw-Hill, 2015.\\[0.3cm]
 
 \noindent
+FBSP. \textbf{Anuário Brasileiro de Segurança Pública 2023}. São Paulo: Fórum Brasileiro de Segurança Pública, 2023. Disponível em: https://forumseguranca.org.br/. Acesso em: 30 jan. 2026.\\[0.3cm]
+
+\noindent
 IBGE. \textbf{Projeções da População do Brasil e Unidades da Federação}. Rio de Janeiro: IBGE, 2022. Disponível em: https://www.ibge.gov.br/. Acesso em: 30 jan. 2026.\\[0.3cm]
 
 \noindent
-IPEA. \textbf{Atlas da Violência 2023}. Brasília: Instituto de Pesquisa Econômica Aplicada, 2023. Disponível em: https://www.ipea.gov.br/atlasviolencia/. Acesso em: 30 jan. 2026.\\[0.3cm]
+SICONFI. \textbf{Sistema de Informações Contábeis e Fiscais do Setor Público Brasileiro}. Brasília: Tesouro Nacional, 2023. Disponível em: https://siconfi.tesouro.gov.br/. Acesso em: 30 jan. 2026.\\[0.3cm]
 
 \noindent
 RUBINSTEIN, R. Y.; KROESE, D. P. \textbf{Simulation and the Monte Carlo Method}. 3. ed. Hoboken: Wiley, 2016.\\[0.3cm]
@@ -692,7 +694,7 @@ WINSTON, W. L. \textbf{Operations Research: Applications and Algorithms}. 4. ed.
 
 \begin{table}[H]
 \centering
-\caption{Dados por estado (2022)}
+\caption{Dados por estado (2023)}
 \label{tab:dados}
 \small
 \begin{tabular}{lrrrrr}
@@ -708,7 +710,7 @@ BA & 13.648 & 14.141.626 & 96,5 & 4.028 & 285 \\
 \bottomrule
 \end{tabular}
 
-\footnotesize{Fonte: Atlas da Violência e Anuário FBSP 2023.}
+\footnotesize{Fonte: Anuário FBSP e SICONFI 2023.}
 \end{table}
 
 Nota: Tabela completa disponível no repositório do projeto.
